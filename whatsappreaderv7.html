@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Chat Reader - Pro Max</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" xintegrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        :root {
+            --page-bg: #f0f2f5;
+            --container-bg: #ffffff;
+            --chat-bg: #e5ddd5;
+            --text-primary: #111b21;
+            --text-secondary: #667781;
+            --bubble-user-bg: #dcf8c6;
+            --bubble-other-bg: #ffffff;
+            --system-bg: #e1f3fb;
+            --system-text: #505d62;
+            --header-bg: #005c4b;
+            --header-text: #ffffff;
+            --border-color: #e0e0e0;
+            --highlight-bg: #fffb00;
+            --icon-color: #8696a0;
+            --button-bg: #008069;
+            --button-text: #ffffff;
+            --link-color: #007bff;
+            --bookmark-active-color: #ffc107; /* Yellow for active bookmark */
+
+            /* SVG Tail URLs - Light Theme */
+            --user-tail-light: url("data:image/svg+xml,%3Csvg width='12' height='19' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10.9999 19C10.9999 19 4.65484 19 0.999905 19C0.999905 19 0.999905 19 0.999905 19C4.83296 19 7.64141 17.8095 9.38817 14.8696C10.0526 13.7917 10.5113 12.3846 10.7417 11.1098C11.0319 9.53108 11.0003 7.82863 11.0003 6.0005C11.0003 4.17237 11.0319 2.46992 10.7417 0.891221C10.5113 -0.383564 10.0526 -1.79069 9.38817 -2.86861C7.64141 -5.8085 4.83296 -7 0.999905 -7C0.999905 -7 0.999905 -7 0.999905 -7C4.65484 -7 10.9999 -7 10.9999 -7L10.9999 19Z' fill='%23dcf8c6'/%3E%3C/svg%3E");
+            --other-tail-light: url("data:image/svg+xml,%3Csvg width='12' height='19' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 19C1 19 7.34506 19 11 19C11 19 11 19 11 19C7.16704 19 4.35859 17.8095 2.61183 14.8696C1.94736 13.7917 1.48866 12.3846 1.25833 11.1098C0.968137 9.53108 0.999701 7.82863 0.999701 6.0005C0.999701 4.17237 0.968137 2.46992 1.25833 0.891221C1.48866 -0.383564 1.94736 -1.79069 2.61183 -2.86861C4.35859 -5.8085 7.16704 -7 11 -7C11 -7 11 -7 11 -7C7.34506 -7 1 -7 1 -7L1 19Z' fill='%23ffffff'/%3E%3C/svg%3E");
+
+            /* SVG Tail URLs - Dark Theme */
+            --user-tail-dark: url("data:image/svg+xml,%3Csvg width='12' height='19' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10.9999 19C10.9999 19 4.65484 19 0.999905 19C0.999905 19 0.999905 19 0.999905 19C4.83296 19 7.64141 17.8095 9.38817 14.8696C10.0526 13.7917 10.5113 12.3846 10.7417 11.1098C11.0319 9.53108 11.0003 7.82863 11.0003 6.0005C11.0003 4.17237 11.0319 2.46992 10.7417 0.891221C10.5113 -0.383564 10.0526 -1.79069 9.38817 -2.86861C7.64141 -5.8085 4.83296 -7 0.999905 -7C0.999905 -7 0.999905 -7 0.999905 -7C4.65484 -7 10.9999 -7 10.9999 -7L10.9999 19Z' fill='%23005c4b'/%3E%3C/svg%3E");
+            --other-tail-dark: url("data:image/svg+xml,%3Csvg width='12' height='19' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 19C1 19 7.34506 19 11 19C11 19 11 19 11 19C7.16704 19 4.35859 17.8095 2.61183 14.8696C1.94736 13.7917 1.48866 12.3846 1.25833 11.1098C0.968137 9.53108 0.999701 7.82863 0.999701 6.0005C0.999701 4.17237 0.968137 2.46992 1.25833 0.891221C1.48866 -0.383564 1.94736 -1.79069 2.61183 -2.86861C4.35859 -5.8085 7.16704 -7 11 -7C11 -7 11 -7 11 -7C7.34506 -7 1 -7 1 -7L1 19Z' fill='%23202c33'/%3E%3C/svg%3E");
+        }
+
+        .dark-theme {
+            --page-bg: #111b21;
+            --container-bg: #202c33;
+            --chat-bg: #0b141a;
+            --text-primary: #e9edef;
+            --text-secondary: #8696a0;
+            --bubble-user-bg: #005c4b;
+            --bubble-other-bg: #202c33;
+            --system-bg: #182229;
+            --system-text: #8696a0;
+            --header-bg: #202c33;
+            --border-color: #344047;
+            --highlight-bg: #facc15;
+            --icon-color: #8696a0;
+            --button-bg: #00a884;
+            --link-color: #58b4f5;
+            --bookmark-active-color: #ffd700; /* Gold for dark theme active bookmark */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .container { background-color: var(--container-bg); transition: background-color 0.3s; }
+        header { background-color: var(--header-bg); color: var(--header-text); transition: background-color 0.3s; }
+        .upload-section { background-color: var(--container-bg); color: var(--text-primary); border-bottom: 1px solid var(--border-color); }
+        .upload-section label { color: var(--button-bg); }
+        .upload-section input { color: var(--text-secondary); }
+
+        #chat-display-area {
+            background-color: var(--chat-bg);
+            height: 60vh; /* Adjusted height */
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s;
+        }
+        #chat-display-area::-webkit-scrollbar { width: 6px; }
+        #chat-display-area::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 10px; }
+        #chat-display-area::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 10px; }
+        .dark-theme #chat-display-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
+
+        .message-wrapper { margin-bottom: 2px; display: flex; width: 100%; }
+        .user-message-wrapper { justify-content: flex-end; }
+        .other-message-wrapper { justify-content: flex-start; }
+
+        .message-bubble {
+            padding: 7px 10px;
+            border-radius: 7.5px;
+            max-width: 70%;
+            word-wrap: break-word;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.08);
+            position: relative;
+            transition: background-color 0.3s, transform 0.2s ease-out;
+        }
+        .message-bubble:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+        }
+        
+        .message-bubble::before {
+            content: "";
+            position: absolute;
+            bottom: 0px;
+            width: 12px;
+            height: 19px;
+            background-repeat: no-repeat;
+            background-size: contain;
+        }
+        .user-message-wrapper .message-bubble { background-color: var(--bubble-user-bg); }
+        .other-message-wrapper .message-bubble { background-color: var(--bubble-other-bg); }
+
+        /* Applying specific tail SVGs based on theme and message type */
+        .user-message-wrapper .message-bubble::before { right: -11px; background-image: var(--user-tail-light); }
+        .other-message-wrapper .message-bubble::before { left: -11px; background-image: var(--other-tail-light); }
+        .dark-theme .user-message-wrapper .message-bubble::before { background-image: var(--user-tail-dark); }
+        .dark-theme .other-message-wrapper .message-bubble::before { background-image: var(--other-tail-dark); }
+
+        /* PDF Export Mode: Hide tails that might cause rendering issues */
+        .pdf-export-mode .message-bubble::before {
+            display: none !important;
+        }
+
+        .message-header { margin-bottom: 3px; }
+        .sender-name { font-weight: 600; font-size: 0.82em; }
+        .message-body { display: flex; flex-direction: column; }
+        .message-text { font-size: 0.92em; line-height: 1.4; white-space: pre-wrap; color: var(--text-primary); padding-right: 50px; }
+        .message-time { font-size: 0.7em; color: var(--text-secondary); opacity: 0.7; text-align: right; margin-top: 2px; position: absolute; bottom: 5px; right: 10px; }
+        
+        .system-message { background-color: var(--system-bg); color: var(--system-text); font-size: 0.78em; text-align: center; padding: 6px 12px; border-radius: 15px; margin: 12px auto; max-width: fit-content; box-shadow: 0 1px 1px rgba(0,0,0,0.05); }
+        mark { background-color: var(--highlight-bg); color: #000; padding: 1px 3px; border-radius: 3px; }
+        .message-bubble a { color: var(--link-color); text-decoration: underline; }
+
+        .date-separator { background-color: var(--system-bg); color: var(--system-text); font-size: 0.75em; font-weight: 500; text-align: center; padding: 5px 12px; border-radius: 15px; margin: 15px auto 10px auto; max-width: fit-content; box-shadow: 0 1px 1px rgba(0,0,0,0.05); opacity: 0.9; }
+        .media-placeholder { background-color: rgba(0,0,0,0.05); border: 1px dashed var(--text-secondary); border-radius: 5px; padding: 15px; margin: 5px 0; display: flex; align-items: center; gap: 10px; font-style: italic; color: var(--text-secondary); }
+        .media-placeholder i { font-size: 1.5em; color: var(--icon-color); }
+        .dark-theme .media-placeholder { background-color: rgba(255,255,255,0.05); }
+
+        #controls { padding: 10px; background-color: var(--container-bg); border-bottom: 1px solid var(--border-color); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; transition: background-color 0.3s, border-color 0.3s;}
+        #controls input, #controls select, #controls button { padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; background-color: var(--page-bg); color: var(--text-primary); }
+        #controls button, #theme-toggle { background-color: var(--button-bg); color: var(--button-text); border: none; cursor: pointer; transition: background-color 0.2s; }
+        #controls button:hover, #theme-toggle:hover { opacity: 0.9; }
+        #theme-toggle { width: 40px; text-align: center; }
+        #searchDateInput { width: auto; } /* Allow date input to size naturally */
+
+        .scroll-buttons { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 1000; }
+        .scroll-buttons button { background-color: var(--button-bg); color: #fff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.2em; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: background-color 0.2s; display: flex; justify-content: center; align-items: center;}
+        .scroll-buttons button:hover { opacity: 0.85; }
+        
+        .message-actions {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            background-color: var(--chat-bg); /* Match chat area for better blending */
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .message-bubble:hover .message-actions { opacity: 0.8; }
+        .message-actions i { cursor: pointer; font-size: 0.8em; color: var(--icon-color); }
+        .message-actions i:hover { color: var(--text-primary); }
+        .bookmark-icon.bookmarked { color: var(--bookmark-active-color) !important; }
+        .pdf-export-mode .message-actions { display: none !important; }
+
+
+        #loading-indicator, #action-feedback { text-align: center; padding: 20px; font-size: 1.1em; color: var(--text-secondary); display: none; }
+        #action-feedback { padding: 10px; margin-top: 10px; border-radius: 5px; }
+        .feedback-success { background-color: var(--button-bg); color: var(--button-text); }
+        .feedback-error { background-color: #d32f2f; color: white; }
+
+        .error-message { color: #d32f2f; font-weight: 500; text-align: center; padding: 10px; background-color: #ffebee; border: 1px solid #ffcdd2; border-radius: 6px; }
+    </style>
+</head>
+<body class=""> 
+    <div class="container bg-white shadow-xl rounded-lg w-full max-w-3xl flex flex-col my-5 mx-auto">
+        <header class="p-4 text-center rounded-t-lg">
+            <h1 class="text-2xl font-semibold">WhatsApp Chat Reader Pro Max</h1>
+        </header>
+
+        <div class="upload-section p-6">
+            <label for="chatFile" class="block text-sm font-medium mb-2">
+                Upload your exported WhatsApp chat file (.txt):
+            </label>
+            <input type="file" id="chatFile" accept=".txt" class="block w-full max-w-md mx-auto text-sm
+                file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold
+                file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer"/>
+            <div id="errorMessage" class="error-message hidden mt-2"></div>
+        </div>
+        
+        <div id="controls" class="flex-col sm:flex-row items-center">
+             <input type="search" id="searchInput" placeholder="Search text..." class="w-full sm:w-auto flex-grow mb-2 sm:mb-0 sm:mr-2">
+             <input type="date" id="searchDateInput" class="w-full sm:w-auto mb-2 sm:mb-0 sm:mr-2">
+             <select id="userSelector" class="w-full sm:w-auto mb-2 sm:mb-0 sm:mr-2">
+                 <option value="OBSERVER_MODE">View as Observer</option>
+                 {/* Options populated by JS */}
+             </select>
+             <div class="flex gap-2 mt-2 sm:mt-0 flex-wrap justify-center">
+                <button id="theme-toggle" title="Toggle Theme"><i class="fas fa-moon"></i></button>
+                <button id="exportPdfBtn" title="Export to PDF"><i class="fas fa-file-pdf"></i></button>
+                <button id="toggleBookmarksBtn" title="View Bookmarks"><i class="fas fa-bookmark"></i> View Bookmarks</button>
+                <button id="saveChatBtn" title="Save Chat"><i class="fas fa-save"></i></button>
+                <button id="loadChatBtn" title="Load Last Saved Chat"><i class="fas fa-folder-open"></i></button>
+             </div>
+        </div>
+        <div id="action-feedback"></div>
+        <div id="loading-indicator"><i class="fas fa-spinner fa-spin"></i> Parsing Chat...</div>
+        <div id="chat-display-area">
+            <p class="text-gray-500 text-center p-10">Upload a chat file or load a saved one to get started!</p>
+        </div>
+    </div>
+
+    <div class="scroll-buttons">
+        <button id="scrollToTop" title="Scroll to Top"><i class="fas fa-arrow-up"></i></button>
+        <button id="scrollToBottom" title="Scroll to Bottom"><i class="fas fa-arrow-down"></i></button>
+    </div>
+
+    <script>
+        // DOM Elements
+        const chatFileInput = document.getElementById('chatFile');
+        const chatDisplayArea = document.getElementById('chat-display-area');
+        const errorMessageDiv = document.getElementById('errorMessage');
+        const searchInput = document.getElementById('searchInput');
+        const searchDateInput = document.getElementById('searchDateInput');
+        const userSelector = document.getElementById('userSelector');
+        const themeToggle = document.getElementById('theme-toggle');
+        const body = document.body;
+        const scrollToTopBtn = document.getElementById('scrollToTop');
+        const scrollToBottomBtn = document.getElementById('scrollToBottom');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const exportPdfBtn = document.getElementById('exportPdfBtn');
+        const toggleBookmarksBtn = document.getElementById('toggleBookmarksBtn');
+        const saveChatBtn = document.getElementById('saveChatBtn');
+        const loadChatBtn = document.getElementById('loadChatBtn');
+        const actionFeedback = document.getElementById('action-feedback');
+
+        let rawChatText = ""; 
+        let allMessages = [];
+        let uniqueSenders = new Set();
+        let selectedUser = "OBSERVER_MODE"; 
+        let senderColors = {};
+        let bookmarkedMessageIds = new Set();
+        let isViewingBookmarks = false;
+
+        const predefinedSenderColors = [ '#e53935', '#3949ab', '#00897b', '#fb8c00', '#8e24aa', '#43a047', '#546e7a', '#d81b60' ];
+        const mediaRegex = /<((image|video|audio|sticker|GIF) omitted|Contact card omitted|document omitted)>/i;
+        const urlRegex = /(?:https?|ftp):\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*)/g;
+
+        // --- Event Listeners ---
+        chatFileInput.addEventListener('change', handleFileUpload);
+        searchInput.addEventListener('input', handleSearch);
+        searchDateInput.addEventListener('input', handleSearch); // Also trigger search on date change
+        userSelector.addEventListener('change', handleUserSelection);
+        themeToggle.addEventListener('click', toggleTheme);
+        scrollToTopBtn.addEventListener('click', () => chatDisplayArea.scrollTop = 0);
+        scrollToBottomBtn.addEventListener('click', () => chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight);
+        chatDisplayArea.addEventListener('click', handleChatAreaClick);
+        exportPdfBtn.addEventListener('click', exportChatToPDF);
+        toggleBookmarksBtn.addEventListener('click', toggleBookmarkView);
+        saveChatBtn.addEventListener('click', saveChatToLocalStorage);
+        loadChatBtn.addEventListener('click', loadChatFromLocalStorage);
+
+        // --- Initial Setup ---
+        loadTheme(); 
+        loadBookmarksFromStorage();
+
+
+        // --- Functions ---
+
+        function showActionFeedback(message, isSuccess = true) {
+            actionFeedback.textContent = message;
+            actionFeedback.className = isSuccess ? 'feedback-success' : 'feedback-error';
+            actionFeedback.style.display = 'block';
+            setTimeout(() => { actionFeedback.style.display = 'none'; }, 3000);
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                loadingIndicator.style.display = 'block';
+                chatDisplayArea.innerHTML = '';
+                errorMessageDiv.classList.add('hidden');
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    rawChatText = e.target.result; 
+                    setTimeout(() => { 
+                         parseChat(rawChatText);
+                         loadingIndicator.style.display = 'none';
+                         showActionFeedback("Chat loaded successfully!");
+                    }, 50);
+                };
+                reader.onerror = () => {
+                    showError("Error reading file.");
+                    loadingIndicator.style.display = 'none';
+                }
+                reader.readAsText(file);
+            }
+        }
+
+        function parseChat(chatText) {
+            if (!chatText) {
+                showError("No chat data to parse.");
+                chatDisplayArea.innerHTML = '<p class="text-gray-500 text-center p-10">Upload a chat file or load a saved one.</p>';
+                return;
+            }
+            uniqueSenders = new Set();
+            senderColors = {};
+            allMessages = [];
+            let messageIdCounter = 0; // For unique message IDs
+            let currentMessageBuffer = null;
+            const lines = chatText.split(/\r?\n/);
+            const messageRegex = /^(\[?(\d{1,2}\/\d{1,2}\/\d{2,4}),? (\d{1,2}:\d{2}(?::\d{2})?(?: [AP]M)?)\]? ?-? ?)(?:([^:]+): )?(.*)$/s;
+
+
+            lines.forEach(line => {
+                const match = line.match(messageRegex);
+                if (match) {
+                    if (currentMessageBuffer) allMessages.push(currentMessageBuffer);
+                    const sender = match[4] ? match[4].trim() : "System";
+                    currentMessageBuffer = {
+                        id: `msg-${messageIdCounter++}`, // Assign unique ID
+                        date: match[2], time: match[3], sender: sender,
+                        text: match[5] ? match[5].trim() : "", isMedia: mediaRegex.test(match[5] || ""),
+                    };
+                    if (sender !== "System") uniqueSenders.add(sender);
+                } else if (currentMessageBuffer) {
+                    currentMessageBuffer.text += '\n' + line.trim();
+                    currentMessageBuffer.isMedia = currentMessageBuffer.isMedia || mediaRegex.test(line);
+                } else if (line.trim() !== "") {
+                    allMessages.push({ 
+                        id: `msg-${messageIdCounter++}`, // Assign unique ID
+                        date: "", time: "", sender: "System", text: line.trim(), isMedia: false 
+                    });
+                }
+            });
+            if (currentMessageBuffer) allMessages.push(currentMessageBuffer);
+
+            populateUserSelector(); 
+            assignSenderColors();
+            displayChat();
+        }
+
+        function populateUserSelector() {
+            const currentVal = userSelector.value; 
+            userSelector.innerHTML = '<option value="OBSERVER_MODE">View as Observer</option>';
+            let firstSender = null;
+            Array.from(uniqueSenders).forEach((sender, index) => {
+                if(index === 0) firstSender = sender;
+                const option = document.createElement('option');
+                option.value = sender;
+                option.textContent = sender;
+                userSelector.appendChild(option);
+            });
+            
+            if (currentVal && Array.from(uniqueSenders).includes(currentVal)) {
+                userSelector.value = currentVal;
+                selectedUser = currentVal;
+            } else if (firstSender) {
+                 userSelector.value = firstSender; 
+                 selectedUser = firstSender;
+            } else {
+                userSelector.value = "OBSERVER_MODE"; 
+                selectedUser = "OBSERVER_MODE";
+            }
+        }
+
+        function assignSenderColors() {
+             Array.from(uniqueSenders).forEach((s, index) => {
+                senderColors[s] = predefinedSenderColors[index % predefinedSenderColors.length];
+            });
+        }
+        
+        function parseMessageDateToYYYYMMDD(dateString) {
+            if (!dateString) return null;
+            let dateObj;
+            const parts = dateString.split('/');
+            if (parts.length === 3) {
+                let day, month, year;
+                const part0 = parseInt(parts[0], 10);
+                const part1 = parseInt(parts[1], 10);
+                const part2 = parseInt(parts[2], 10);
+
+                if (part0 >= 1 && part0 <= 12) { // MM/DD/YY or MM/DD/YYYY
+                    month = part0; day = part1; year = part2;
+                    if (year < 100) year += 2000;
+                    dateObj = new Date(year, month - 1, day);
+                    if (dateObj && dateObj.getFullYear() === year && dateObj.getMonth() === month - 1 && dateObj.getDate() === day) {
+                        // Valid
+                    } else { dateObj = undefined; }
+                }
+                if ((!dateObj || isNaN(dateObj.getTime())) && (part1 >= 1 && part1 <= 12)) { // DD/MM/YY or DD/MM/YYYY
+                    month = part1; day = part0; year = part2;
+                    if (year < 100) year += 2000;
+                    dateObj = new Date(year, month - 1, day);
+                     if (!dateObj || isNaN(dateObj.getTime()) || dateObj.getMonth() !== month -1 || dateObj.getDate() !== day ) {
+                        dateObj = undefined; 
+                    }
+                }
+            }
+            if (dateObj && !isNaN(dateObj.getTime())) {
+                return dateObj.getFullYear() + '-' + String(dateObj.getMonth() + 1).padStart(2, '0') + '-' + String(dateObj.getDate()).padStart(2, '0');
+            }
+            return null; // Return null if parsing fails
+        }
+
+
+        function displayChat() {
+            chatDisplayArea.innerHTML = '';
+            if (allMessages.length === 0 && !isViewingBookmarks) { // Check if not viewing bookmarks either
+                chatDisplayArea.innerHTML = '<p class="text-gray-500 text-center p-10">No messages to display. Upload a file or load saved chat.</p>';
+                return;
+            }
+
+            const searchTerm = searchInput.value.toLowerCase();
+            const searchDateValue = searchDateInput.value; // YYYY-MM-DD format
+
+            let filteredMessages = allMessages.filter(msg => {
+                let matchesText = true;
+                let matchesDate = true;
+
+                if (searchTerm) {
+                    matchesText = (msg.text.toLowerCase().includes(searchTerm) || 
+                                   (msg.sender !== "System" && msg.sender.toLowerCase().includes(searchTerm)));
+                }
+
+                if (searchDateValue) {
+                    const messageDateYYYYMMDD = parseMessageDateToYYYYMMDD(msg.date);
+                    matchesDate = messageDateYYYYMMDD === searchDateValue;
+                }
+                return matchesText && matchesDate;
+            });
+
+            if (isViewingBookmarks) {
+                filteredMessages = filteredMessages.filter(msg => bookmarkedMessageIds.has(msg.id));
+                if (filteredMessages.length === 0) {
+                     chatDisplayArea.innerHTML = '<p class="text-gray-500 text-center p-10">No bookmarked messages match the current filters (if any), or no messages are bookmarked.</p>';
+                     return;
+                }
+            }
+            
+            if (filteredMessages.length === 0) {
+                chatDisplayArea.innerHTML = '<p class="text-gray-500 text-center p-10">No messages match your search criteria.</p>';
+                return;
+            }
+
+
+            let lastDate = null;
+            filteredMessages.forEach(msg => {
+                if (msg.date && msg.date !== lastDate) {
+                    chatDisplayArea.appendChild(createDateSeparator(msg.date));
+                    lastDate = msg.date;
+                }
+                chatDisplayArea.appendChild(createMessageElement(msg, searchTerm));
+            });
+            // Only scroll if not actively searching/filtering, or if it's the initial load of bookmarks
+            if (!searchTerm && !searchDateValue && !isViewingBookmarks) {
+                chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight;
+            } else if (isViewingBookmarks && filteredMessages.length > 0) {
+                 chatDisplayArea.scrollTop = 0; // Scroll to top for bookmark view
+            }
+        }
+
+        function createDateSeparator(dateString) {
+            const separator = document.createElement('div');
+            separator.className = 'date-separator';
+            let dateObj;
+
+            const parts = dateString.split('/'); 
+            if (parts.length === 3) {
+                let day, month, year;
+                
+                const part0 = parseInt(parts[0], 10);
+                const part1 = parseInt(parts[1], 10);
+                const part2 = parseInt(parts[2], 10);
+
+                // Try MM/DD/YYYY or MM/DD/YY
+                if (part0 >= 1 && part0 <= 12) { // Potential month
+                    month = part0;
+                    day = part1;
+                    year = part2;
+                    if (year < 100) year += 2000; 
+                    dateObj = new Date(year, month - 1, day);
+                    if (!dateObj || isNaN(dateObj.getTime()) || dateObj.getMonth() !== month -1 || dateObj.getDate() !== day) {
+                        dateObj = undefined; 
+                    }
+                }
+
+                if ((!dateObj || isNaN(dateObj.getTime())) && (part1 >=1 && part1 <=12) ) {
+                     month = part1;
+                     day = part0;
+                     year = part2;
+                     if (year < 100) year += 2000; 
+                     dateObj = new Date(year, month - 1, day);
+                     if (!dateObj || isNaN(dateObj.getTime()) || dateObj.getMonth() !== month -1 || dateObj.getDate() !== day ) {
+                        dateObj = undefined; 
+                    }
+                }
+            }
+
+            if (dateObj && !isNaN(dateObj.getTime())) {
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                separator.textContent = dateObj.toLocaleDateString(undefined, options).toUpperCase();
+            } else {
+                separator.textContent = dateString.toUpperCase(); 
+                console.warn("Could not parse date for separator:", dateString, "using fallback.");
+            }
+            return separator;
+        }
+
+
+        function createMessageElement(msg, searchTerm) {
+            const isUser = msg.sender === selectedUser && selectedUser !== "OBSERVER_MODE";
+            const isSystem = msg.sender === "System" || isSystemLikeMessage(msg.text);
+            
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('message-wrapper');
+            wrapper.setAttribute('data-message-id', msg.id);
+
+
+            if (isSystem) {
+                wrapper.className = 'system-message'; // Keep this simple for system messages
+                wrapper.innerHTML = highlightText(msg.text, searchTerm);
+                // System messages don't get bookmark/copy icons
+                return wrapper;
+            }
+
+            wrapper.classList.add(isUser ? 'user-message-wrapper' : 'other-message-wrapper');
+            
+
+            const bubble = document.createElement('div');
+            bubble.classList.add('message-bubble');
+
+            const getThemeColor = (cssVarName, fallbackColor) => {
+                if (typeof document !== 'undefined' && document.documentElement) {
+                    const color = getComputedStyle(document.documentElement).getPropertyValue(cssVarName).trim();
+                    return color || fallbackColor;
+                }
+                return fallbackColor; 
+            };
+
+            if (!isUser && msg.sender !== "System") { 
+                 const header = document.createElement('div');
+                 header.className = 'message-header';
+                 const senderNameDiv = document.createElement('div');
+                 senderNameDiv.className = 'sender-name';
+                 senderNameDiv.textContent = msg.sender;
+                 senderNameDiv.style.color = senderColors[msg.sender] || getThemeColor('--text-secondary', '#667781');
+                 header.appendChild(senderNameDiv);
+                 bubble.appendChild(header);
+            }
+
+
+            const bodyDiv = document.createElement('div');
+            bodyDiv.className = 'message-body';
+            
+            if (msg.isMedia) {
+                bodyDiv.appendChild(createMediaPlaceholder(msg.text));
+            } else {
+                const textP = document.createElement('p');
+                textP.className = 'message-text';
+                textP.innerHTML = highlightText(linkifyText(msg.text), searchTerm);
+                bodyDiv.appendChild(textP);
+            }
+
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'message-time';
+            timeSpan.textContent = msg.time.replace(/ [AP]M$/, '').trim();
+            bodyDiv.appendChild(timeSpan);
+            
+            // Message Actions (Copy & Bookmark)
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'message-actions';
+
+            const copyIcon = document.createElement('i');
+            copyIcon.className = 'fas fa-copy copy-icon';
+            copyIcon.title = 'Copy text';
+            actionsDiv.appendChild(copyIcon);
+
+            const bookmarkIcon = document.createElement('i');
+            bookmarkIcon.className = `far fa-bookmark bookmark-icon ${bookmarkedMessageIds.has(msg.id) ? 'fas bookmarked' : 'far'}`;
+            bookmarkIcon.title = bookmarkedMessageIds.has(msg.id) ? 'Remove Bookmark' : 'Add Bookmark';
+            actionsDiv.appendChild(bookmarkIcon);
+            
+            bubble.appendChild(actionsDiv); // Add actions to bubble
+
+            bubble.appendChild(bodyDiv);
+            wrapper.appendChild(bubble);
+
+            return wrapper;
+        }
+        
+        function createMediaPlaceholder(text) { 
+            const placeholder = document.createElement('div');
+            placeholder.className = 'media-placeholder';
+            let iconClass = 'fa-file'; 
+            if (text.includes('image')) iconClass = 'fa-image';
+            else if (text.includes('video')) iconClass = 'fa-video';
+            else if (text.includes('audio')) iconClass = 'fa-headphones';
+            else if (text.includes('sticker')) iconClass = 'fa-sticky-note';
+            else if (text.includes('Contact')) iconClass = 'fa-address-card';
+            placeholder.innerHTML = `<i class="fas ${iconClass}"></i> ${text}`;
+            return placeholder;
+        }
+        function linkifyText(text) { 
+             return text.replace(urlRegex, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
+        }
+        function highlightText(text, term) { 
+            if (!term) return text;
+            const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return text.replace(regex, `<mark>$1</mark>`);
+        }
+        
+        function handleSearch(event) { 
+            isViewingBookmarks = false; // Exit bookmark view when searching
+            updateToggleBookmarksButton();
+            displayChat(); 
+        }
+
+        function handleUserSelection(event) {
+            selectedUser = event.target.value;
+            displayChat(); 
+        }
+
+        function toggleTheme() {
+            body.classList.toggle('dark-theme');
+            const isDark = body.classList.contains('dark-theme');
+            themeToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        function loadTheme() {
+            if (localStorage.getItem('theme') === 'dark') {
+                body.classList.add('dark-theme');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            } else {
+                 themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+            }
+        }
+        
+        function handleChatAreaClick(event) {
+            const target = event.target;
+            const messageWrapper = target.closest('.message-wrapper');
+            if (!messageWrapper) return;
+
+            const messageId = messageWrapper.getAttribute('data-message-id');
+
+            if (target.classList.contains('copy-icon')) {
+                const bubble = target.closest('.message-bubble');
+                const textElement = bubble.querySelector('.message-text');
+                if (textElement) {
+                    navigator.clipboard.writeText(textElement.textContent)
+                        .then(() => { 
+                            target.classList.remove('fa-copy');
+                            target.classList.add('fa-check');
+                            setTimeout(() => {
+                                 target.classList.remove('fa-check');
+                                 target.classList.add('fa-copy');
+                            }, 1500);
+                         })
+                        .catch(err => {
+                            console.error('Failed to copy text: ', err);
+                            showActionFeedback('Failed to copy text.', false);
+                        });
+                }
+            } else if (target.classList.contains('bookmark-icon')) {
+                toggleBookmark(messageId, target);
+            }
+        }
+
+        function toggleBookmark(messageId, iconElement) {
+            if (bookmarkedMessageIds.has(messageId)) {
+                bookmarkedMessageIds.delete(messageId);
+                iconElement.classList.remove('fas', 'bookmarked');
+                iconElement.classList.add('far');
+                iconElement.title = 'Add Bookmark';
+                showActionFeedback("Bookmark removed.", true);
+            } else {
+                bookmarkedMessageIds.add(messageId);
+                iconElement.classList.remove('far');
+                iconElement.classList.add('fas', 'bookmarked');
+                iconElement.title = 'Remove Bookmark';
+                showActionFeedback("Message bookmarked!", true);
+            }
+            saveBookmarksToStorage();
+            if(isViewingBookmarks) displayChat(); // Refresh view if currently viewing bookmarks
+        }
+
+        function saveBookmarksToStorage() {
+            localStorage.setItem('whatsappChatBookmarks', JSON.stringify(Array.from(bookmarkedMessageIds)));
+        }
+
+        function loadBookmarksFromStorage() {
+            const storedBookmarks = localStorage.getItem('whatsappChatBookmarks');
+            if (storedBookmarks) {
+                bookmarkedMessageIds = new Set(JSON.parse(storedBookmarks));
+            }
+        }
+        
+        function toggleBookmarkView() {
+            isViewingBookmarks = !isViewingBookmarks;
+            updateToggleBookmarksButton();
+            displayChat();
+        }
+
+        function updateToggleBookmarksButton() {
+             if (isViewingBookmarks) {
+                toggleBookmarksBtn.innerHTML = '<i class="fas fa-comments"></i> Show All Chats';
+                toggleBookmarksBtn.title = "Show All Chats";
+            } else {
+                toggleBookmarksBtn.innerHTML = '<i class="fas fa-bookmark"></i> View Bookmarks';
+                toggleBookmarksBtn.title = "View Bookmarks";
+            }
+        }
+
+
+        function exportChatToPDF() {
+            if (allMessages.length === 0) {
+                showActionFeedback("No chat loaded to export.", false);
+                return Promise.reject("No chat"); 
+            }
+            showActionFeedback("Generating PDF...", true);
+            const element = chatDisplayArea;
+            
+            const originalHeight = element.style.height;
+            const originalOverflowY = element.style.overflowY;
+
+            element.style.height = 'auto';
+            element.style.overflowY = 'visible';
+            element.classList.add('pdf-export-mode');
+
+            const opt = {
+              margin:       0.5,
+              filename:     'whatsapp_chat_export.pdf',
+              image:        { type: 'jpeg', quality: 0.98 },
+              html2canvas:  { 
+                scale: 2, 
+                useCORS: true, 
+                logging: false,
+                backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--chat-bg').trim() || '#e5ddd5', 
+                onclone: (doc) => {
+                    const chatAreaClone = doc.getElementById('chat-display-area');
+                    if(chatAreaClone) {
+                        chatAreaClone.style.height = 'auto';
+                        chatAreaClone.style.overflowY = 'visible';
+                        chatAreaClone.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--chat-bg').trim() || '#e5ddd5';
+                    }
+                    doc.querySelectorAll('.pdf-export-mode .message-bubble::before').forEach(el => el.style.display = 'none');
+                    doc.querySelectorAll('.pdf-export-mode .message-actions').forEach(el => el.style.display = 'none');
+                }
+              },
+              jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            
+            return new Promise((resolve, reject) => {
+                requestAnimationFrame(() => { 
+                    requestAnimationFrame(() => { 
+                        html2pdf().from(element).set(opt).save()
+                        .then(() => {
+                            showActionFeedback("PDF exported successfully!", true);
+                            resolve();
+                        })
+                        .catch(err => {
+                            showActionFeedback("PDF export failed. See console for details.", false);
+                            console.error("PDF Export Error:", err);
+                            reject(err); 
+                        })
+                        .finally(() => {
+                            element.style.height = originalHeight;
+                            element.style.overflowY = originalOverflowY;
+                            element.classList.remove('pdf-export-mode');
+                        });
+                    });
+                });
+            });
+        }
+
+        function saveChatToLocalStorage() {
+            if (!rawChatText && allMessages.length === 0) {
+                showActionFeedback("No chat data to save.", false);
+                return;
+            }
+            try {
+                const chatData = {
+                    rawChatText: rawChatText, 
+                    selectedUser: selectedUser,
+                    timestamp: new Date().toISOString()
+                };
+                localStorage.setItem('savedWhatsAppChat', JSON.stringify(chatData));
+                showActionFeedback("Chat saved successfully!", true);
+            } catch (e) {
+                console.error("Error saving chat to local storage:", e);
+                showActionFeedback("Failed to save chat. Storage might be full.", false);
+            }
+        }
+
+        function loadChatFromLocalStorage() {
+            try {
+                const savedData = localStorage.getItem('savedWhatsAppChat');
+                if (savedData) {
+                    const chatData = JSON.parse(savedData);
+                    rawChatText = chatData.rawChatText; 
+                    
+                    loadingIndicator.style.display = 'block';
+                    chatDisplayArea.innerHTML = '';
+                    
+                    setTimeout(() => { 
+                        parseChat(rawChatText); 
+                        if (chatData.selectedUser && Array.from(uniqueSenders).includes(chatData.selectedUser)) {
+                            userSelector.value = chatData.selectedUser;
+                            selectedUser = chatData.selectedUser;
+                        } else if (uniqueSenders.size > 0) { 
+                            const firstSender = Array.from(uniqueSenders)[0];
+                            userSelector.value = firstSender;
+                            selectedUser = firstSender;
+                        } else {
+                            userSelector.value = "OBSERVER_MODE";
+                            selectedUser = "OBSERVER_MODE";
+                        }
+                        displayChat(); 
+                        loadingIndicator.style.display = 'none';
+                        showActionFeedback(`Chat from ${new Date(chatData.timestamp).toLocaleString()} loaded.`, true);
+                    }, 50);
+
+                } else {
+                    showActionFeedback("No saved chat found.", false);
+                }
+            } catch (e) {
+                console.error("Error loading chat from local storage:", e);
+                showActionFeedback("Failed to load saved chat.", false);
+            }
+        }
+
+        function isSystemLikeMessage(text) {
+            if (!text) return false;
+            const systemKeywords = [
+                "created group", "added", "removed", "left", "changed the subject", 
+                "changed this group's icon", "changed your security code", 
+                "messages and calls are end-to-end encrypted", "You were added",
+                "changed to", "was added", "your security code with"
+            ];
+            const lowerText = text.toLowerCase();
+            return systemKeywords.some(keyword => lowerText.includes(keyword));
+        }
+        function showError(message) { 
+            errorMessageDiv.textContent = message;
+            errorMessageDiv.classList.remove('hidden');
+        }
+
+    </script>
+</body>
+</html>

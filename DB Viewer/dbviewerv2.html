@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Database Viewer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #25d366;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .upload-section {
+            padding: 30px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin: 20px 0;
+        }
+
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-button {
+            background: #25d366;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-input-button:hover {
+            background: #128c7e;
+            transform: translateY(-2px);
+        }
+
+        .chat-container {
+            display: flex;
+            height: 600px;
+        }
+
+        .contacts-sidebar {
+            width: 300px;
+            border-right: 1px solid #eee;
+            background: #f8f9fa;
+            overflow-y: auto;
+        }
+
+        .contact-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .contact-item:hover {
+            background: #e3f2fd;
+        }
+
+        .contact-item.active {
+            background: #25d366;
+            color: white;
+        }
+
+        .contact-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .contact-preview {
+            font-size: 12px;
+            color: #666;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .messages-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #e5ddd5;
+        }
+
+        .chat-header {
+            background: #075e54;
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .message.sent {
+            justify-content: flex-end;
+        }
+
+        .message.received {
+            justify-content: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .message.sent .message-bubble {
+            background: #dcf8c6;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.received .message-bubble {
+            background: white;
+            border-bottom-left-radius: 5px;
+        }
+
+        .message-text {
+            line-height: 1.4;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .message.received .message-time {
+            text-align: left;
+        }
+
+        .media-message {
+            max-width: 250px;
+        }
+
+        .media-message img {
+            max-width: 100%;
+            border-radius: 10px;
+            margin-bottom: 5px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            color: #d32f2f;
+            background: #ffebee;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #25d366;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .search-box {
+            padding: 10px;
+            margin: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            width: calc(100% - 20px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 WhatsApp Database Viewer</h1>
+            <p>Upload your WhatsApp database file to view messages</p>
+        </div>
+
+        <div class="upload-section" id="uploadSection">
+            <h3>Select WhatsApp Database File</h3>
+            <p>Upload your msgstore.db or wa.db file</p>
+            <div class="file-input-wrapper">
+                <input type="file" class="file-input" id="fileInput" accept=".db,.sqlite,.sqlite3">
+                <button class="file-input-button">Choose Database File</button>
+            </div>
+            <div id="fileInfo"></div>
+        </div>
+
+        <div id="statsSection" class="stats" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-number" id="totalMessages">0</div>
+                <div class="stat-label">Total Messages</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalChats">0</div>
+                <div class="stat-label">Total Chats</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="mediaMessages">0</div>
+                <div class="stat-label">Media Messages</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="dateRange">-</div>
+                <div class="stat-label">Date Range</div>
+            </div>
+        </div>
+
+        <div class="chat-container" id="chatContainer" style="display: none;">
+            <div class="contacts-sidebar">
+                <input type="text" class="search-box" id="searchBox" placeholder="Search chats...">
+                <div id="contactsList"></div>
+            </div>
+            <div class="messages-area">
+                <div class="chat-header" id="chatHeader">Select a chat to view messages</div>
+                <div class="messages-container" id="messagesContainer">
+                    <div class="loading">Select a chat from the sidebar to view messages</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="loadingDiv" class="loading" style="display: none;">
+            <p>Loading database...</p>
+        </div>
+
+        <div id="errorDiv" class="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        let db = null;
+        let chats = [];
+        let currentChatId = null;
+
+        // Initialize SQL.js
+        let sqlReady = false;
+        async function initializeSql() {
+            if (sqlReady) return window.SQL;
+            
+            try {
+                const SQL = await window.initSqlJs({
+                    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+                });
+                sqlReady = true;
+                return SQL;
+            } catch (error) {
+                console.error('Failed to initialize SQL.js:', error);
+                throw new Error('Failed to load database engine');
+            }
+        }
+
+        document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+        document.getElementById('searchBox').addEventListener('input', handleSearch);
+
+        async function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            document.getElementById('loadingDiv').style.display = 'block';
+            document.getElementById('errorDiv').style.display = 'none';
+            document.getElementById('uploadSection').style.display = 'none';
+            document.getElementById('chatContainer').style.display = 'none';
+            document.getElementById('statsSection').style.display = 'none';
+
+            try {
+                const SQL = await initializeSql();
+                const arrayBuffer = await file.arrayBuffer();
+                const uint8Array = new Uint8Array(arrayBuffer);
+                
+                db = new SQL.Database(uint8Array);
+                
+                await loadDatabase();
+                
+            } catch (error) {
+                console.error('File loading error:', error);
+                showError('Error loading database: ' + error.message);
+                document.getElementById('uploadSection').style.display = 'block';
+            } finally {
+                document.getElementById('loadingDiv').style.display = 'none';
+            }
+        }
+
+        async function loadDatabase() {
+            try {
+                // Try different table structures for different WhatsApp versions
+                const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+                console.log('Available tables:', tables.map(t => t.name));
+
+                // Load chats and messages
+                await loadChats();
+                updateStats();
+                
+                document.getElementById('chatContainer').style.display = 'flex';
+                document.getElementById('statsSection').style.display = 'grid';
+                
+            } catch (error) {
+                console.error('Database loading error:', error);
+                showError('Error parsing database structure. This may not be a valid WhatsApp database file.');
+            }
+        }
+
+        async function loadChats() {
+            try {
+                // Check available tables first
+                const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+                const tableNames = tables.map(t => t.name.toLowerCase());
+                
+                let chatResults = [];
+                
+                // Try different database structures
+                if (tableNames.includes('messages')) {
+                    // Standard Android WhatsApp structure
+                    try {
+                        const sampleRow = db.prepare("SELECT * FROM messages LIMIT 1").get();
+                        const columns = Object.keys(sampleRow || {});
+                        
+                        let chatQuery = '';
+                        if (columns.includes('key_remote_jid')) {
+                            chatQuery = `
+                                SELECT DISTINCT 
+                                    key_remote_jid as chat_id,
+                                    key_remote_jid as display_name,
+                                    COUNT(*) as message_count,
+                                    MAX(timestamp) as last_message_time
+                                FROM messages 
+                                WHERE key_remote_jid IS NOT NULL AND key_remote_jid != ''
+                                GROUP BY key_remote_jid
+                                ORDER BY last_message_time DESC
+                            `;
+                        } else if (columns.includes('remote_jid')) {
+                            chatQuery = `
+                                SELECT DISTINCT 
+                                    remote_jid as chat_id,
+                                    remote_jid as display_name,
+                                    COUNT(*) as message_count,
+                                    MAX(timestamp) as last_message_time
+                                FROM messages 
+                                WHERE remote_jid IS NOT NULL AND remote_jid != ''
+                                GROUP BY remote_jid
+                                ORDER BY last_message_time DESC
+                            `;
+                        }
+                        
+                        if (chatQuery) {
+                            chatResults = db.prepare(chatQuery).all();
+                        }
+                    } catch (e) {
+                        console.warn('Failed to query messages table:', e);
+                    }
+                }
+                
+                // Try alternative chat table structure
+                if (chatResults.length === 0 && tableNames.includes('chat')) {
+                    try {
+                        const chatQuery = `
+                            SELECT 
+                                jid as chat_id,
+                                COALESCE(subject, jid) as display_name,
+                                1 as message_count,
+                                COALESCE(created_timestamp, 0) as last_message_time
+                            FROM chat
+                            WHERE jid IS NOT NULL AND jid != ''
+                            ORDER BY created_timestamp DESC
+                        `;
+                        chatResults = db.prepare(chatQuery).all();
+                    } catch (e) {
+                        console.warn('Failed to query chat table:', e);
+                    }
+                }
+                
+                // Try message table (alternative naming)
+                if (chatResults.length === 0 && tableNames.includes('message')) {
+                    try {
+                        const chatQuery = `
+                            SELECT DISTINCT 
+                                chat_jid as chat_id,
+                                chat_jid as display_name,
+                                COUNT(*) as message_count,
+                                MAX(timestamp) as last_message_time
+                            FROM message 
+                            WHERE chat_jid IS NOT NULL AND chat_jid != ''
+                            GROUP BY chat_jid
+                            ORDER BY last_message_time DESC
+                        `;
+                        chatResults = db.prepare(chatQuery).all();
+                    } catch (e) {
+                        console.warn('Failed to query message table:', e);
+                    }
+                }
+                
+                if (chatResults.length === 0) {
+                    throw new Error('No valid chat data found. Available tables: ' + tableNames.join(', '));
+                }
+                
+                chats = chatResults.map(chat => ({
+                    id: chat.chat_id,
+                    name: formatChatName(chat.display_name || chat.chat_id),
+                    messageCount: chat.message_count || 0,
+                    lastMessageTime: chat.last_message_time || 0
+                }));
+
+                displayChats();
+                
+            } catch (error) {
+                console.error('Error loading chats:', error);
+                throw new Error('Error loading chats: ' + error.message);
+            }
+        }
+
+        function formatChatName(chatId) {
+            if (!chatId) return 'Unknown';
+            
+            // Extract phone number or group name
+            if (chatId.includes('@g.us')) {
+                return 'Group Chat';
+            } else if (chatId.includes('@s.whatsapp.net')) {
+                const phone = chatId.split('@')[0];
+                return phone.replace(/[^\d]/g, '') || 'Contact';
+            }
+            return chatId;
+        }
+
+        function displayChats() {
+            const contactsList = document.getElementById('contactsList');
+            contactsList.innerHTML = '';
+
+            if (chats.length === 0) {
+                contactsList.innerHTML = '<div class="loading">No chats found</div>';
+                return;
+            }
+
+            chats.forEach(chat => {
+                const chatElement = document.createElement('div');
+                chatElement.className = 'contact-item';
+                chatElement.onclick = () => loadMessages(chat.id, chat.name);
+                
+                chatElement.innerHTML = `
+                    <div class="contact-name">${escapeHtml(chat.name)}</div>
+                    <div class="contact-preview">${chat.messageCount} messages</div>
+                `;
+                
+                contactsList.appendChild(chatElement);
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function loadMessages(chatId, chatName) {
+            currentChatId = chatId;
+            
+            // Update active chat
+            document.querySelectorAll('.contact-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Find and highlight the clicked chat
+            const clickedElement = Array.from(document.querySelectorAll('.contact-item')).find(item => 
+                item.innerHTML.includes(chatName)
+            );
+            if (clickedElement) {
+                clickedElement.classList.add('active');
+            }
+            
+            document.getElementById('chatHeader').textContent = chatName;
+            document.getElementById('messagesContainer').innerHTML = '<div class="loading">Loading messages...</div>';
+
+            try {
+                const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+                const tableNames = tables.map(t => t.name.toLowerCase());
+                
+                let messages = [];
+                
+                // Try different message query patterns based on available tables
+                if (tableNames.includes('messages')) {
+                    try {
+                        const sampleRow = db.prepare("SELECT * FROM messages LIMIT 1").get();
+                        const columns = Object.keys(sampleRow || {});
+                        
+                        let messageQuery = '';
+                        if (columns.includes('key_remote_jid') && columns.includes('key_from_me')) {
+                            messageQuery = `
+                                SELECT 
+                                    data as message_text,
+                                    timestamp,
+                                    key_from_me as from_me,
+                                    media_mime_type,
+                                    media_name,
+                                    thumb_image,
+                                    media_caption
+                                FROM messages 
+                                WHERE key_remote_jid = ?
+                                ORDER BY timestamp ASC
+                            `;
+                        } else if (columns.includes('remote_jid')) {
+                            messageQuery = `
+                                SELECT 
+                                    data as message_text,
+                                    timestamp,
+                                    from_me,
+                                    media_mime_type,
+                                    media_name,
+                                    thumb_image,
+                                    media_caption
+                                FROM messages 
+                                WHERE remote_jid = ?
+                                ORDER BY timestamp ASC
+                            `;
+                        }
+                        
+                        if (messageQuery) {
+                            messages = db.prepare(messageQuery).all(chatId);
+                        }
+                    } catch (e) {
+                        console.warn('Failed to query messages table:', e);
+                    }
+                }
+                
+                // Try alternative message table structure
+                if (messages.length === 0 && tableNames.includes('message')) {
+                    try {
+                        const messageQuery = `
+                            SELECT 
+                                text_data as message_text,
+                                timestamp,
+                                from_me,
+                                mime_type as media_mime_type,
+                                media_name,
+                                thumb_image,
+                                media_caption
+                            FROM message 
+                            WHERE chat_jid = ?
+                            ORDER BY timestamp ASC
+                        `;
+                        messages = db.prepare(messageQuery).all(chatId);
+                    } catch (e) {
+                        console.warn('Failed to query message table:', e);
+                    }
+                }
+                
+                // Try with chat_row_id lookup
+                if (messages.length === 0 && tableNames.includes('message') && tableNames.includes('chat')) {
+                    try {
+                        const messageQuery = `
+                            SELECT 
+                                m.text_data as message_text,
+                                m.timestamp,
+                                m.from_me,
+                                m.mime_type as media_mime_type,
+                                m.media_name,
+                                m.thumb_image,
+                                m.media_caption
+                            FROM message m
+                            JOIN chat c ON m.chat_row_id = c._id
+                            WHERE c.jid = ?
+                            ORDER BY m.timestamp ASC
+                        `;
+                        messages = db.prepare(messageQuery).all(chatId);
+                    } catch (e) {
+                        console.warn('Failed to query with chat join:', e);
+                    }
+                }
+                
+                displayMessages(messages);
+                
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                document.getElementById('messagesContainer').innerHTML = 
+                    `<div class="error">Error loading messages: ${error.message}</div>`;
+            }
+        }
+
+        function displayMessages(messages) {
+            const container = document.getElementById('messagesContainer');
+            container.innerHTML = '';
+
+            if (messages.length === 0) {
+                container.innerHTML = '<div class="loading">No messages found in this chat</div>';
+                return;
+            }
+
+            messages.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                const isFromMe = msg.from_me === 1 || msg.from_me === true || msg.key_from_me === 1;
+                messageDiv.className = `message ${isFromMe ? 'sent' : 'received'}`;
+                
+                const bubble = document.createElement('div');
+                bubble.className = 'message-bubble';
+                
+                // Handle media messages
+                if (msg.media_mime_type) {
+                    bubble.classList.add('media-message');
+                    
+                    if (msg.media_mime_type.startsWith('image/') && msg.thumb_image) {
+                        try {
+                            const img = document.createElement('img');
+                            // Handle different formats of thumbnail data
+                            if (typeof msg.thumb_image === 'string') {
+                                img.src = `data:${msg.media_mime_type};base64,${msg.thumb_image}`;
+                            } else if (msg.thumb_image instanceof Uint8Array) {
+                                const base64 = btoa(String.fromCharCode.apply(null, msg.thumb_image));
+                                img.src = `data:${msg.media_mime_type};base64,${base64}`;
+                            }
+                            img.alt = 'Image';
+                            img.onerror = () => {
+                                img.style.display = 'none';
+                            };
+                            bubble.appendChild(img);
+                        } catch (e) {
+                            console.warn('Failed to display image thumbnail:', e);
+                        }
+                    }
+                    
+                    if (msg.media_name) {
+                        const fileName = document.createElement('div');
+                        fileName.textContent = `📎 ${msg.media_name}`;
+                        fileName.style.fontStyle = 'italic';
+                        fileName.style.color = '#666';
+                        bubble.appendChild(fileName);
+                    }
+                    
+                    // Add media caption if available
+                    if (msg.media_caption) {
+                        const captionDiv = document.createElement('div');
+                        captionDiv.className = 'message-text';
+                        captionDiv.textContent = msg.media_caption;
+                        bubble.appendChild(captionDiv);
+                    }
+                }
+                
+                // Add message text
+                if (msg.message_text && msg.message_text.trim()) {
+                    const textDiv = document.createElement('div');
+                    textDiv.className = 'message-text';
+                    textDiv.textContent = msg.message_text;
+                    bubble.appendChild(textDiv);
+                }
+                
+                // Add timestamp
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-time';
+                timeDiv.textContent = formatTimestamp(msg.timestamp);
+                bubble.appendChild(timeDiv);
+                
+                messageDiv.appendChild(bubble);
+                container.appendChild(messageDiv);
+            });
+            
+            // Scroll to bottom
+            setTimeout(() => {
+                container.scrollTop = container.scrollHeight;
+            }, 100);
+        }
+
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return 'Unknown time';
+            
+            try {
+                let date;
+                const timestampStr = timestamp.toString();
+                
+                // Handle different timestamp formats
+                if (timestampStr.length === 13) {
+                    // Milliseconds
+                    date = new Date(parseInt(timestamp));
+                } else if (timestampStr.length === 10) {
+                    // Seconds
+                    date = new Date(parseInt(timestamp) * 1000);
+                } else if (timestampStr.length === 16) {
+                    // Microseconds (divide by 1000)
+                    date = new Date(parseInt(timestamp) / 1000);
+                } else {
+                    // Try parsing as-is
+                    date = new Date(timestamp);
+                }
+                
+                // Check if date is valid
+                if (isNaN(date.getTime())) {
+                    return 'Invalid date';
+                }
+                
+                // Format the date
+                return date.toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+                
+            } catch (error) {
+                console.warn('Error formatting timestamp:', timestamp, error);
+                return 'Invalid date';
+            }
+        }
+
+        function updateStats() {
+            try {
+                const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+                const tableNames = tables.map(t => t.name.toLowerCase());
+                
+                // Total messages
+                let totalMessages = 0;
+                if (tableNames.includes('messages')) {
+                    try {
+                        const result = db.prepare("SELECT COUNT(*) as count FROM messages").get();
+                        totalMessages = result.count || 0;
+                    } catch (e) {
+                        console.warn('Failed to count messages:', e);
+                    }
+                } else if (tableNames.includes('message')) {
+                    try {
+                        const result = db.prepare("SELECT COUNT(*) as count FROM message").get();
+                        totalMessages = result.count || 0;
+                    } catch (e) {
+                        console.warn('Failed to count message:', e);
+                    }
+                }
+                document.getElementById('totalMessages').textContent = totalMessages;
+                
+                // Total chats
+                document.getElementById('totalChats').textContent = chats.length;
+                
+                // Media messages
+                let mediaMessages = 0;
+                if (tableNames.includes('messages')) {
+                    try {
+                        const result = db.prepare("SELECT COUNT(*) as count FROM messages WHERE media_mime_type IS NOT NULL AND media_mime_type != ''").get();
+                        mediaMessages = result.count || 0;
+                    } catch (e) {
+                        try {
+                            const result = db.prepare("SELECT COUNT(*) as count FROM messages WHERE mime_type IS NOT NULL AND mime_type != ''").get();
+                            mediaMessages = result.count || 0;
+                        } catch (e2) {
+                            console.warn('Failed to count media messages:', e2);
+                        }
+                    }
+                } else if (tableNames.includes('message')) {
+                    try {
+                        const result = db.prepare("SELECT COUNT(*) as count FROM message WHERE mime_type IS NOT NULL AND mime_type != ''").get();
+                        mediaMessages = result.count || 0;
+                    } catch (e) {
+                        console.warn('Failed to count media in message table:', e);
+                    }
+                }
+                document.getElementById('mediaMessages').textContent = mediaMessages;
+                
+                // Date range
+                let dateRange = '-';
+                const timestampQueries = [
+                    "SELECT MIN(timestamp) as min_date, MAX(timestamp) as max_date FROM messages",
+                    "SELECT MIN(timestamp) as min_date, MAX(timestamp) as max_date FROM message"
+                ];
+                
+                for (const query of timestampQueries) {
+                    try {
+                        const result = db.prepare(query).get();
+                        if (result && result.min_date && result.max_date) {
+                            const minDate = formatTimestamp(result.min_date).split(',')[0];
+                            const maxDate = formatTimestamp(result.max_date).split(',')[0];
+                            dateRange = `${minDate} - ${maxDate}`;
+                            break;
+                        }
+                    } catch (e) {
+                        console.warn('Failed date range query:', e);
+                    }
+                }
+                document.getElementById('dateRange').textContent = dateRange;
+                
+            } catch (error) {
+                console.error('Error updating stats:', error);
+            }
+        }
+
+        function handleSearch(event) {
+            const searchTerm = event.target.value.toLowerCase();
+            const filteredChats = chats.filter(chat => 
+                chat.name.toLowerCase().includes(searchTerm)
+            );
+            
+            const contactsList = document.getElementById('contactsList');
+            contactsList.innerHTML = '';
+            
+            filteredChats.forEach(chat => {
+                const chatElement = document.createElement('div');
+                chatElement.className = 'contact-item';
+                chatElement.onclick = () => loadMessages(chat.id, chat.name);
+                
+                chatElement.innerHTML = `
+                    <div class="contact-name">${chat.name}</div>
+                    <div class="contact-preview">${chat.messageCount} messages</div>
+                `;
+                
+                contactsList.appendChild(chatElement);
+            });
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorDiv');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

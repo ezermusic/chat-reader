@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enhanced WhatsApp Chat Reader</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/js/all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    body {
+      background-color: #f0f2f5;
+      font-family: 'Inter', sans-serif;
+    }
+    .chat-container {
+      background-color: #fff;
+      max-width: 720px;
+      margin: 2rem auto;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .message {
+      max-width: 75%;
+      padding: 10px;
+      margin: 5px;
+      border-radius: 8px;
+      position: relative;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+    .message.user {
+      background-color: #dcf8c6;
+      margin-left: auto;
+      border-bottom-right-radius: 0;
+    }
+    .message.other {
+      background-color: #fff;
+      margin-right: auto;
+      border-bottom-left-radius: 0;
+    }
+    .message .copy-icon {
+      position: absolute;
+      top: 5px;
+      right: 8px;
+      opacity: 0;
+      cursor: pointer;
+      font-size: 0.8em;
+    }
+    .message:hover .copy-icon {
+      opacity: 0.6;
+    }
+    .date-separator {
+      text-align: center;
+      color: gray;
+      font-size: 0.75rem;
+      margin: 10px auto;
+    }
+    .typing {
+      font-style: italic;
+      font-size: 0.85rem;
+      margin: 5px 10px;
+      color: #888;
+    }
+    .dot {
+      animation: blink 1.5s infinite;
+      opacity: 0;
+    }
+    .dot:nth-child(1) { animation-delay: 0s; }
+    .dot:nth-child(2) { animation-delay: 0.3s; }
+    .dot:nth-child(3) { animation-delay: 0.6s; }
+    @keyframes blink {
+      0%, 20% { opacity: 0; }
+      50% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container p-4">
+    <div class="mb-4">
+      <input type="file" id="chatFile" accept=".txt" class="mb-2 border p-2 rounded w-full" />
+      <input type="search" id="searchInput" placeholder="Search chat..." class="mb-2 border p-2 rounded w-full" />
+      <button id="exportPDF" class="bg-green-600 text-white px-4 py-2 rounded"><i class="fas fa-file-pdf"></i> Export as PDF</button>
+    </div>
+    <div id="chatDisplay" class="h-[65vh] overflow-y-auto border-t pt-4 space-y-2"></div>
+    <div class="text-center mt-4 text-sm text-gray-500" id="chatStats"></div>
+  </div>
+
+  <script>
+    const chatFile = document.getElementById('chatFile');
+    const chatDisplay = document.getElementById('chatDisplay');
+    const searchInput = document.getElementById('searchInput');
+    const chatStats = document.getElementById('chatStats');
+
+    let allMessages = [];
+    let selectedUser = null;
+
+    chatFile.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => parseChat(reader.result);
+      reader.readAsText(file);
+    });
+
+    function parseChat(data) {
+      allMessages = [];
+      const lines = data.split("\n");
+      const regex = /^(\d{1,2}\/\d{1,2}\/\d{2,4}), (\d{1,2}:\d{2}(?: [AP]M)?) - (.*?): (.*)$/;
+      let lastDate = '';
+
+      lines.forEach(line => {
+        const match = line.match(regex);
+        if (match) {
+          const [_, date, time, sender, message] = match;
+          allMessages.push({ date, time, sender, message });
+        }
+      });
+
+      selectedUser = allMessages[0]?.sender || null;
+      renderChat();
+      showStats();
+    }
+
+    function renderChat() {
+      chatDisplay.innerHTML = '';
+      let lastDate = '';
+      allMessages.forEach(msg => {
+        if (msg.date !== lastDate) {
+          const dateDiv = document.createElement('div');
+          dateDiv.className = 'date-separator';
+          dateDiv.textContent = `--- ${msg.date} ---`;
+          chatDisplay.appendChild(dateDiv);
+          lastDate = msg.date;
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'message ' + (msg.sender === selectedUser ? 'user' : 'other');
+
+        const textNode = document.createElement('span');
+        textNode.innerHTML = msg.message.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" class="text-blue-600" target="_blank">$1</a>');
+
+        const copy = document.createElement('i');
+        copy.className = 'fas fa-copy copy-icon';
+        copy.title = 'Copy';
+        copy.onclick = () => navigator.clipboard.writeText(msg.message);
+
+        wrapper.appendChild(copy);
+        wrapper.appendChild(textNode);
+        chatDisplay.appendChild(wrapper);
+      });
+    }
+
+    function showStats() {
+      const users = {};
+      allMessages.forEach(msg => {
+        users[msg.sender] = (users[msg.sender] || 0) + 1;
+      });
+      const total = allMessages.length;
+      const first = allMessages[0]?.date;
+      const last = allMessages[allMessages.length - 1]?.date;
+      let html = `<strong>Total:</strong> ${total}<br>`;
+      html += `<strong>First:</strong> ${first} <strong>Last:</strong> ${last}<br><strong>By User:</strong><ul>`;
+      for (const user in users) html += `<li>${user}: ${users[user]}</li>`;
+      html += '</ul>';
+      chatStats.innerHTML = html;
+    }
+
+    searchInput.addEventListener('input', e => {
+      const term = e.target.value.toLowerCase();
+      const messages = chatDisplay.querySelectorAll('.message');
+      messages.forEach(msg => {
+        msg.style.display = msg.textContent.toLowerCase().includes(term) ? '' : 'none';
+      });
+    });
+
+    document.getElementById('exportPDF').addEventListener('click', () => {
+      html2pdf().from(chatDisplay).save('chat.pdf');
+    });
+
+    setInterval(() => {
+      if (Math.random() < 0.05 && !document.getElementById('fakeTyping')) {
+        const div = document.createElement('div');
+        div.className = 'typing';
+        div.id = 'fakeTyping';
+        div.innerHTML = 'Other user is typing<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>';
+        chatDisplay.appendChild(div);
+        chatDisplay.scrollTop = chatDisplay.scrollHeight;
+        setTimeout(() => div.remove(), 3000);
+      }
+    }, 8000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Chat Reader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* WhatsApp-like background */
+            color: #111b21; /* WhatsApp dark text */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: #ffffff; /* White container for chat */
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* To keep rounded corners with chat area */
+        }
+
+        .upload-section {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            background-color: #f7f7f7;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .upload-section input[type="file"] {
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 6px;
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+
+        .upload-section label {
+            font-weight: 600;
+            color: #005c4b; /* WhatsApp green */
+        }
+
+        #chat-display-area {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            height: 60vh; /* Default height, can be adjusted */
+            background-color: #e5ddd5; /* WhatsApp chat background pattern color */
+            /* background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); /* Optional: subtle pattern */
+        }
+
+        .message-bubble {
+            padding: 8px 12px;
+            border-radius: 7.5px;
+            margin-bottom: 10px;
+            max-width: 75%;
+            word-wrap: break-word;
+            box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+            position: relative;
+        }
+
+        .message-bubble .sender-name {
+            font-weight: bold;
+            font-size: 0.85em;
+            margin-bottom: 3px;
+            color: #333; /* Darker sender name for visibility */
+        }
+        .message-bubble .message-time {
+            font-size: 0.75em;
+            color: #667781; /* WhatsApp time color */
+            float: right;
+            margin-left: 10px;
+            margin-top: 5px;
+            clear: both; /* Ensures time is below message if it wraps */
+        }
+
+        .message-bubble .message-text {
+            font-size: 0.95em;
+            line-height: 1.4;
+        }
+
+        .user-message {
+            background-color: #dcf8c6; /* User's message bubble color (outgoing) */
+            align-self: flex-end;
+            margin-left: auto; /* Pushes to the right */
+        }
+
+        .other-message {
+            background-color: #ffffff; /* Other users' message bubble color (incoming) */
+            align-self: flex-start;
+            margin-right: auto; /* Pushes to the left */
+        }
+
+        .system-message {
+            background-color: #e2effa; /* Light blue for system messages */
+            color: #505A62;
+            font-size: 0.8em;
+            text-align: center;
+            padding: 6px;
+            border-radius: 5px;
+            margin: 10px auto; /* Center system messages */
+            width: fit-content;
+            max-width: 90%;
+        }
+         .message-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        .sender-name {
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-size: 0.9em;
+        }
+        .message-time-container {
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-end;
+            height: 100%;
+        }
+        .message-time {
+            font-size: 0.75em;
+            color: #8696a0; /* WhatsApp metadata color */
+            margin-left: 8px;
+            white-space: nowrap; /* Prevent time from wrapping */
+        }
+
+        .message-content {
+            margin-top: 2px;
+        }
+
+        /* Styling for Tailwind compatibility and overrides */
+        .prose {
+            max-width: none; /* Override prose max-width if using typography plugin */
+        }
+
+        /* Custom scrollbar for chat area */
+        #chat-display-area::-webkit-scrollbar {
+            width: 6px;
+        }
+        #chat-display-area::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        #chat-display-area::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+        #chat-display-area::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+        .error-message {
+            color: red;
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="container bg-white shadow-xl rounded-lg w-full max-w-2xl flex flex-col">
+        <header class="bg-teal-600 text-white p-4 text-center rounded-t-lg">
+            <h1 class="text-2xl font-semibold">WhatsApp Chat Reader</h1>
+        </header>
+
+        <div class="upload-section p-6 border-b border-gray-200">
+            <label for="chatFile" class="block text-sm font-medium text-gray-700 mb-2">
+                Upload your exported WhatsApp chat file (.txt):
+            </label>
+            <input type="file" id="chatFile" accept=".txt" class="block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0
+                file:text-sm file:font-semibold
+                file:bg-teal-50 file:text-teal-700
+                hover:file:bg-teal-100
+                cursor-pointer
+            "/>
+            <div id="errorMessage" class="error-message hidden mt-2"></div>
+        </div>
+
+        <div id="chat-display-area" class="flex-grow p-4 overflow-y-auto h-96 bg-gray-200">
+            <p class="text-gray-500 text-center">Upload a chat file to see messages.</p>
+        </div>
+         <footer class="p-4 bg-gray-100 border-t border-gray-200 text-center rounded-b-lg">
+            <p class="text-xs text-gray-500">WhatsApp Chat Reader v1.0</p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const chatFileInput = document.getElementById('chatFile');
+        const chatDisplayArea = document.getElementById('chat-display-area');
+        const errorMessageDiv = document.getElementById('errorMessage');
+
+        let uniqueSenders = new Set();
+        let senderColors = {};
+        const predefinedColors = [
+            '#FFAB91', '#FFCC80', '#E6EE9C', '#80CBC4', '#81D4FA',
+            '#CE93D8', '#F48FB1', '#BCAAA4', '#EEEEEE', '#B0BEC5'
+        ]; // A few predefined colors for senders
+
+        // Event listener for file input
+        chatFileInput.addEventListener('change', handleFileUpload);
+
+        /**
+         * Handles the file upload event.
+         * Reads the file and initiates parsing.
+         * @param {Event} event - The file input change event.
+         */
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.type === "text/plain") {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const chatText = e.target.result;
+                        parseAndDisplayChat(chatText);
+                    };
+                    reader.onerror = function() {
+                        showError("Error reading file.");
+                    }
+                    reader.readAsText(file);
+                    errorMessageDiv.classList.add('hidden');
+                    errorMessageDiv.textContent = '';
+                } else {
+                    showError("Invalid file type. Please upload a .txt file.");
+                    chatDisplayArea.innerHTML = '<p class="text-gray-500 text-center">Upload a chat file to see messages.</p>';
+                }
+            }
+        }
+
+        /**
+         * Parses the chat text and displays messages in the chat area.
+         * @param {string} chatText - The raw text content of the chat file.
+         */
+        function parseAndDisplayChat(chatText) {
+            chatDisplayArea.innerHTML = ''; // Clear previous chat
+            uniqueSenders = new Set();
+            senderColors = {};
+
+            const lines = chatText.split('\\n');
+            let messages = [];
+            let currentMessageBuffer = null;
+
+            // Regex to identify a new message line (date, time - sender: message)
+            // Handles formats like:
+            // 12/31/23, 11:59 PM - Sender Name: Message content
+            // 31/12/2023, 23:59 - Sender Name: Message content
+            // [31/12/2023, 23:59:58] Sender Name: Message content
+            // It also tries to capture system messages that don't have a sender.
+            const messageRegex = /^(\[?(\d{1,2}\/\d{1,2}\/\d{2,4}),? (\d{1,2}:\d{2}(?::\d{2})?(?: [AP]M)?)\]? ?-? ?)(?:([^:]+): )?(.*)$/s;
+
+            lines.forEach(line => {
+                const match = line.match(messageRegex);
+                if (match) {
+                    // If there's a buffered message, push it first
+                    if (currentMessageBuffer) {
+                        messages.push(currentMessageBuffer);
+                    }
+
+                    const dateTimeFull = match[1].replace('[', '').replace(']', '').trim();
+                    const datePart = match[2];
+                    const timePart = match[3];
+                    const sender = match[4] ? match[4].trim() : "System"; // If no sender, assume it's a system message
+                    let text = match[5] ? match[5].trim() : "";
+
+                    // Normalize date to DD/MM/YYYY for consistency if needed, or keep original
+                    // For simplicity, we'll use the matched datePart and timePart directly.
+
+                    currentMessageBuffer = {
+                        date: datePart,
+                        time: timePart,
+                        sender: sender,
+                        text: text
+                    };
+                    if (sender !== "System") {
+                        uniqueSenders.add(sender);
+                    }
+                } else if (currentMessageBuffer) {
+                    // This line is a continuation of the previous message
+                    currentMessageBuffer.text += '\\n' + line.trim();
+                } else {
+                    // This line is likely a system message at the beginning or an unparsed line
+                    // We can treat it as a system message without date/time
+                    messages.push({
+                        date: "",
+                        time: "",
+                        sender: "System",
+                        text: line.trim()
+                    });
+                }
+            });
+
+            // Push the last buffered message
+            if (currentMessageBuffer) {
+                messages.push(currentMessageBuffer);
+            }
+
+            if (messages.length === 0 && lines.length > 0 && lines.every(l => l.trim() === '')) {
+                 showError("The file appears to be empty or could not be parsed. Please check the file format.");
+                 return;
+            } else if (messages.length === 0 && lines.length > 0) {
+                // If no messages were parsed but there's content, it might be a non-standard format or a system message block
+                chatDisplayArea.innerHTML = `<p class="system-message">Could not parse messages. Displaying raw content:</p>`;
+                lines.forEach(rawLine => {
+                    const p = document.createElement('p');
+                    p.textContent = rawLine;
+                    p.className = 'text-xs p-1 bg-gray-300 rounded my-1';
+                    chatDisplayArea.appendChild(p);
+                });
+                return;
+            }
+
+
+            // Assign colors to senders
+            Array.from(uniqueSenders).forEach((s, index) => {
+                senderColors[s] = predefinedColors[index % predefinedColors.length];
+            });
+
+            messages.forEach(msg => {
+                displayMessage(msg);
+            });
+
+            if (chatDisplayArea.firstChild) {
+                 chatDisplayArea.firstChild.scrollIntoView(); // Scroll to the top (first message)
+            } else if (messages.length === 0) {
+                chatDisplayArea.innerHTML = '<p class="text-gray-500 text-center">No messages found or chat format not recognized.</p>';
+            }
+        }
+
+        /**
+         * Creates and appends a message bubble to the chat display area.
+         * @param {object} msg - The message object containing date, time, sender, and text.
+         */
+        function displayMessage(msg) {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.classList.add('message-bubble', 'flex', 'flex-col', 'mb-3', 'rounded-lg', 'p-3', 'shadow');
+
+            // Heuristic: Assume the first sender identified is "You" or "Me"
+            // This is a simplification. A more robust way would be to let the user specify.
+            const isUser = msg.sender === Array.from(uniqueSenders)[0] && uniqueSenders.size > 1;
+
+            if (msg.sender === "System" || msg.text.includes("created group") || msg.text.includes("added") || msg.text.includes("changed the subject") || msg.text.includes("left") || msg.text.includes("security code changed")) {
+                messageWrapper.classList.add('system-message', 'mx-auto', 'my-2', 'p-2', 'text-xs', 'bg-blue-100', 'text-blue-700', 'rounded-md', 'w-auto', 'max-w-xs', 'text-center');
+                messageWrapper.textContent = msg.text;
+                 // Add date/time for system messages if available
+                if (msg.date && msg.time) {
+                    const systemTimeDiv = document.createElement('div');
+                    systemTimeDiv.classList.add('text-xs', 'text-gray-500', 'mt-1');
+                    systemTimeDiv.textContent = `${msg.date}, ${msg.time}`;
+                    messageWrapper.appendChild(systemTimeDiv);
+                }
+            } else {
+                messageWrapper.classList.add(isUser ? 'user-message' : 'other-message');
+                if (isUser) {
+                    messageWrapper.classList.add('bg-green-100', 'self-end', 'ml-auto');
+                } else {
+                    messageWrapper.classList.add('bg-white', 'self-start', 'mr-auto');
+                }
+
+
+                const senderDiv = document.createElement('div');
+                senderDiv.classList.add('sender-name', 'font-semibold', 'text-sm');
+                senderDiv.textContent = msg.sender;
+                if (!isUser && uniqueSenders.size > 1) { // Only show sender name for others if multiple participants
+                    // Assign a color to the sender name if not the user
+                    senderDiv.style.color = senderColors[msg.sender] || '#333'; // Fallback color
+                } else if (uniqueSenders.size <=1 && msg.sender !== "System") { // If only one sender, show their name
+                     senderDiv.style.color = senderColors[msg.sender] || '#333';
+                } else {
+                    senderDiv.classList.add('hidden'); // Hide sender name for user's own messages
+                }
+
+
+                const textDiv = document.createElement('div');
+                textDiv.classList.add('message-text', 'text-sm');
+                textDiv.innerText = msg.text; // Use innerText to prevent HTML injection from chat content
+
+                const timeDiv = document.createElement('div');
+                timeDiv.classList.add('message-time', 'text-xs', 'text-gray-500', 'mt-1', 'text-right');
+                timeDiv.textContent = `${msg.date} ${msg.time}`;
+
+
+                messageWrapper.appendChild(senderDiv);
+                messageWrapper.appendChild(textDiv);
+                messageWrapper.appendChild(timeDiv);
+            }
+
+            chatDisplayArea.appendChild(messageWrapper);
+        }
+
+        /**
+         * Shows an error message to the user.
+         * @param {string} message - The error message to display.
+         */
+        function showError(message) {
+            errorMessageDiv.textContent = message;
+            errorMessageDiv.classList.remove('hidden');
+        }
+
+        // Initial message if no file is loaded
+        if (chatDisplayArea.children.length === 0) {
+            chatDisplayArea.innerHTML = '<p class="text-gray-500 text-center">Upload a chat file to see messages.</p>';
+        }
+
+    </script>
+</body>
+</html>

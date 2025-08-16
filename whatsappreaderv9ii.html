@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Chat Reader - Ultimate</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" xintegrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        :root {
+            --page-bg: #f0f2f5;
+            --container-bg: #ffffff;
+            --chat-bg: #e5ddd5; /* WhatsApp chat background pattern color */
+            --text-primary: #111b21;
+            --text-secondary: #667781;
+            --bubble-user-bg: #dcf8c6;
+            --bubble-other-bg: #ffffff;
+            --system-bg: #e1f3fb;
+            --system-text: #505d62;
+            --header-bg: #005c4b; /* Darker green for header */
+            --header-text: #ffffff;
+            --border-color: #e0e0e0;
+            --highlight-bg: #fffb00; /* Yellow for search highlight */
+            --icon-color: #8696a0;
+            --button-bg: #008069; /* WhatsApp Green */
+            --button-text: #ffffff;
+            --button-hover-bg: #00a884; /* Brighter green for hover */
+            --link-color: #007bff;
+            --bookmark-active-color: #ffc107; /* Yellow for active bookmark */
+            --reply-border-color: #00a884; 
+            --reply-bg-color: rgba(0, 0, 0, 0.03);
+            --sidebar-bg: #f0f0f0;
+            --sidebar-item-hover-bg: #e0e0e0;
+            --sidebar-active-item-bg: #d1d1d1;
+            --modal-bg: rgba(0, 0, 0, 0.5);
+            --modal-content-bg: var(--container-bg);
+        }
+
+        .dark-theme {
+            --page-bg: #111b21; 
+            --container-bg: #202c33; 
+            --chat-bg: #0b141a; 
+            --text-primary: #e9edef; 
+            --text-secondary: #8696a0; 
+            --bubble-user-bg: #005c4b; 
+            --bubble-other-bg: #202c33; 
+            --system-bg: #182229; 
+            --system-text: #8696a0;
+            --header-bg: #202c33;
+            --border-color: #344047;
+            --highlight-bg: #facc15; 
+            --icon-color: #8696a0;
+            --button-bg: #00a884; 
+            --button-hover-bg: #008069;
+            --link-color: #58b4f5; 
+            --bookmark-active-color: #ffd700; 
+            --reply-bg-color: rgba(255, 255, 255, 0.05);
+            --sidebar-bg: #111b21;
+            --sidebar-item-hover-bg: #2a3942;
+            --sidebar-active-item-bg: #202c33;
+            --modal-content-bg: #2a3942;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+            display: flex; /* For sidebar layout */
+            height: 100vh;
+            margin: 0;
+            overflow: hidden; /* Prevent body scroll with fixed sidebar/main */
+        }
+        
+        #chat-history-sidebar {
+            width: 300px;
+            min-width: 250px; /* Minimum width */
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        #sidebar-header {
+            padding: 10px 15px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--header-bg);
+            color: var(--header-text);
+        }
+        #saved-chats-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        #saved-chats-list li {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #saved-chats-list li:hover {
+            background-color: var(--sidebar-item-hover-bg);
+        }
+        #saved-chats-list li.active-chat-history {
+            background-color: var(--sidebar-active-item-bg);
+            font-weight: 500;
+        }
+        .chat-history-name {
+            font-size: 0.95em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-grow: 1;
+            margin-right: 5px; /* Space before icons */
+        }
+        .chat-history-date {
+            font-size: 0.75em;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            margin-left: auto; /* Push date to the right if name is short */
+        }
+        .chat-history-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px; /* Space between icons */
+            margin-left: 10px; /* Space from date/name */
+        }
+        .chat-history-rename, .chat-history-delete {
+            color: var(--icon-color);
+            opacity: 0.6;
+            transition: opacity 0.2s, color 0.2s;
+            font-size: 0.9em; /* Slightly smaller icons */
+        }
+        .chat-history-rename:hover { color: var(--button-hover-bg); opacity: 1; }
+        .chat-history-delete:hover { color: #e53935; opacity: 1; }
+
+        #no-chats-saved {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+
+
+        .main-content-wrapper {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden; /* Prevent main content from causing body scroll */
+        }
+
+        .container { 
+            background-color: var(--container-bg); 
+            transition: background-color 0.3s;
+            width: 100%;
+            max-width: none; /* Remove max-width to fill space */
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            box-shadow: none; /* Remove shadow if sidebar is present */
+            border-radius: 0; /* Remove radius if sidebar is present */
+            margin: 0;
+        }
+        header { background-color: var(--header-bg); color: var(--header-text); transition: background-color 0.3s; border-radius: 0;}
+        .upload-section { background-color: var(--container-bg); color: var(--text-primary); border-bottom: 1px solid var(--border-color); }
+        .upload-section label { color: var(--button-bg); }
+        .upload-section input { color: var(--text-secondary); }
+        .upload-section.dragover {
+            border-style: dashed;
+            border-color: var(--button-bg);
+            background-color: rgba(0, 128, 105, 0.1); /* Light green tint */
+        }
+
+
+        #chat-display-area {
+            background-color: var(--chat-bg);
+            flex-grow: 1; /* Take remaining space */
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s;
+        }
+        #chat-display-area::-webkit-scrollbar { width: 8px; } /* Slightly thicker scrollbar */
+        #chat-display-area::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 10px; }
+        #chat-display-area::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.3); border-radius: 10px; }
+        .dark-theme #chat-display-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); }
+
+        .message-wrapper { margin-bottom: 2px; display: flex; width: 100%; }
+        .user-message-wrapper { justify-content: flex-end; }
+        .other-message-wrapper { justify-content: flex-start; }
+
+        .message-bubble {
+            padding: 7px 10px;
+            border-radius: 7.5px;
+            max-width: 70%;
+            word-wrap: break-word;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.08);
+            position: relative;
+            transition: background-color 0.3s, transform 0.2s ease-out;
+        }
+        .message-bubble:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+        }
+        
+        .message-bubble::before {
+            content: "";
+            position: absolute;
+            bottom: 0px;
+            width: 12px;
+            height: 19px;
+            background-repeat: no-repeat;
+            background-size: contain;
+        }
+        .user-message-wrapper .message-bubble { background-color: var(--bubble-user-bg); }
+        .other-message-wrapper .message-bubble { background-color: var(--bubble-other-bg); }
+
+        .user-message-wrapper .message-bubble::before { right: -11px; background-image: var(--user-tail-light); }
+        .other-message-wrapper .message-bubble::before { left: -11px; background-image: var(--other-tail-light); }
+        .dark-theme .user-message-wrapper .message-bubble::before { background-image: var(--user-tail-dark); }
+        .dark-theme .other-message-wrapper .message-bubble::before { background-image: var(--other-tail-dark); }
+
+        .pdf-export-mode .message-bubble::before { display: none !important; }
+
+        .message-header { margin-bottom: 3px; }
+        .sender-name { font-weight: 600; font-size: 0.82em; }
+        .message-body { display: flex; flex-direction: column; }
+        .message-text { font-size: 0.92em; line-height: 1.4; white-space: pre-wrap; color: var(--text-primary); padding-right: 50px; }
+        .message-time { font-size: 0.7em; color: var(--text-secondary); opacity: 0.7; text-align: right; margin-top: 2px; position: absolute; bottom: 5px; right: 10px; }
+        
+        .system-message { background-color: var(--system-bg); color: var(--system-text); font-size: 0.78em; text-align: center; padding: 6px 12px; border-radius: 15px; margin: 12px auto; max-width: fit-content; box-shadow: 0 1px 1px rgba(0,0,0,0.05); }
+        mark { background-color: var(--highlight-bg); color: #000; padding: 1px 3px; border-radius: 3px; }
+        .message-bubble a { color: var(--link-color); text-decoration: underline; }
+        .message-bubble a:hover { text-decoration-color: var(--link-color); opacity: 0.8; }
+
+
+        .date-separator { background-color: var(--system-bg); color: var(--system-text); font-size: 0.75em; font-weight: 500; text-align: center; padding: 5px 12px; border-radius: 15px; margin: 15px auto 10px auto; max-width: fit-content; box-shadow: 0 1px 1px rgba(0,0,0,0.05); opacity: 0.9; }
+        .media-placeholder { background-color: rgba(0,0,0,0.05); border: 1px dashed var(--text-secondary); border-radius: 5px; padding: 15px; margin: 5px 0; display: flex; align-items: center; gap: 10px; font-style: italic; color: var(--text-secondary); }
+        .media-placeholder i { font-size: 1.5em; color: var(--icon-color); }
+        .dark-theme .media-placeholder { background-color: rgba(255,255,255,0.05); }
+
+        #controls { padding: 10px; background-color: var(--container-bg); border-bottom: 1px solid var(--border-color); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; transition: background-color 0.3s, border-color 0.3s;}
+        #controls input, #controls select, #controls button { padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; background-color: var(--page-bg); color: var(--text-primary); }
+        #controls button, #theme-toggle { background-color: var(--button-bg); color: var(--button-text); border: none; cursor: pointer; transition: background-color 0.2s, transform 0.1s; }
+        #controls button:hover, #theme-toggle:hover { background-color: var(--button-hover-bg); transform: scale(1.05); }
+        #controls button:active, #theme-toggle:active { transform: scale(0.98); }
+        #theme-toggle { width: 40px; text-align: center; }
+        .date-range-label { font-size: 0.9em; margin-right: 5px; color: var(--text-secondary); }
+
+
+        .scroll-buttons { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 1000; }
+        .scroll-buttons button { background-color: var(--button-bg); color: #fff; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.2em; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: background-color 0.2s, transform 0.1s; display: flex; justify-content: center; align-items: center;}
+        .scroll-buttons button:hover { background-color: var(--button-hover-bg); transform: scale(1.1); }
+        .scroll-buttons button:active { transform: scale(1.0); }
+        
+        .message-actions {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            background-color: var(--chat-bg); 
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .message-bubble:hover .message-actions { opacity: 0.8; }
+        .message-actions i { cursor: pointer; font-size: 0.8em; color: var(--icon-color); }
+        .message-actions i:hover { color: var(--text-primary); }
+        .bookmark-icon.bookmarked { color: var(--bookmark-active-color) !important; }
+        .pdf-export-mode .message-actions { display: none !important; }
+
+        .reply-quote {
+            background-color: var(--reply-bg-color);
+            border-left: 3px solid var(--reply-border-color);
+            padding: 5px 8px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+        .reply-quote .sender-name {
+            font-weight: 600;
+            font-size: 0.9em; 
+            display: block; 
+            margin-bottom: 2px;
+        }
+        .reply-quote .reply-text-snippet {
+            color: var(--text-secondary);
+            font-style: italic;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2; 
+            -webkit-box-orient: vertical;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--modal-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000; /* Above everything */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+            transition-delay: 0s;
+        }
+        .modal-content {
+            background-color: var(--modal-content-bg);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+        }
+        .modal-content h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.25em;
+            color: var(--text-primary);
+        }
+        .modal-content p {
+            margin-bottom: 20px;
+            font-size: 0.95em;
+            color: var(--text-secondary);
+        }
+        .modal-actions button {
+            padding: 10px 15px;
+            margin: 0 8px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .modal-actions button:hover { transform: scale(1.05); }
+        .modal-actions button:active { transform: scale(0.98); }
+        #confirmModalBtn { background-color: #e53935; color: white; } /* Generic confirm, specific styling if needed */
+        #cancelModalBtn { background-color: var(--button-bg); color: var(--button-text); }
+        #cancelModalBtn:hover { background-color: var(--button-hover-bg); }
+
+
+        #action-feedback { 
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            font-size: 1em;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 2000; /* Ensure it's above other elements */
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            transform: translateX(-50%) translateY(20px); /* Start off-screen */
+        }
+        #action-feedback.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .feedback-success { background-color: var(--button-bg); color: var(--button-text); }
+        .feedback-error { background-color: #d32f2f; color: white; }
+
+        .error-message { color: #d32f2f; font-weight: 500; text-align: center; padding: 10px; background-color: #ffebee; border: 1px solid #ffcdd2; border-radius: 6px; }
+    </style>
+</head>
+<body class=""> 
+    <div id="chat-history-sidebar">
+        <div id="sidebar-header">Chat History</div>
+        <ul id="saved-chats-list">
+            <li id="no-chats-saved">No chats saved yet.</li>
+        </ul>
+    </div>
+    <div class="main-content-wrapper">
+        <div class="container">
+            <header class="p-4 text-center">
+                <h1 class="text-2xl font-semibold">WhatsApp Chat Reader Ultimate</h1>
+            </header>
+
+            <div id="upload-section" class="upload-section p-6 text-center"> 
+                <label for="chatFile" class="block text-sm font-medium mb-2">
+                    Upload your exported WhatsApp chat file (.txt) or Drag & Drop:
+                </label>
+                <input type="file" id="chatFile" accept=".txt" class="block w-full max-w-md mx-auto text-sm
+                    file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold
+                    file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer"/>
+                <p id="drop-text" class="text-xs text-gray-500 mt-1 hidden">Drop file here</p>
+                <div id="errorMessage" class="error-message hidden mt-2"></div>
+            </div>
+            
+            <div id="controls" class="flex-col sm:flex-row items-center">
+                 <input type="search" id="searchInput" placeholder="Search text..." class="w-full sm:w-auto flex-grow mb-2 sm:mb-0 sm:mr-2">
+                 <div class="flex items-center mb-2 sm:mb-0 sm:mr-2">
+                    <label for="searchStartDateInput" class="date-range-label">From:</label>
+                    <input type="date" id="searchStartDateInput" class="w-full sm:w-auto">
+                 </div>
+                 <div class="flex items-center mb-2 sm:mb-0 sm:mr-2">
+                    <label for="searchEndDateInput" class="date-range-label">To:</label>
+                    <input type="date" id="searchEndDateInput" class="w-full sm:w-auto">
+                 </div>
+                 <select id="userSelector" class="w-full sm:w-auto mb-2 sm:mb-0 sm:mr-2">
+                     <option value="OBSERVER_MODE">View as Observer</option>
+                 </select>
+                 <div class="flex gap-2 mt-2 sm:mt-0 flex-wrap justify-center">
+                    <button id="theme-toggle" title="Toggle Theme"><i class="fas fa-moon"></i></button>
+                    <button id="exportPdfBtn" title="Export to PDF"><i class="fas fa-file-pdf"></i></button>
+                    <button id="toggleBookmarksBtn" title="View Bookmarks"><i class="fas fa-bookmark"></i> View Bookmarks</button>
+                    <button id="saveChatBtn" title="Save Chat"><i class="fas fa-save"></i></button>
+                 </div>
+            </div>
+            <div id="action-feedback"></div>
+            <div id="loading-indicator"><i class="fas fa-spinner fa-spin"></i> Parsing Chat...</div>
+            <div id="chat-display-area">
+                <p class="text-gray-500 text-center p-10">Upload a chat file or load a saved one to get started!</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="scroll-buttons">
+        <button id="scrollToTop" title="Scroll to Top"><i class="fas fa-arrow-up"></i></button>
+        <button id="scrollToBottom" title="Scroll to Bottom"><i class="fas fa-arrow-down"></i></button>
+    </div>
+
+    <div id="confirmationModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modalTitle">Confirm Action</h3>
+            <p id="modalMessage">Are you sure you want to proceed?</p>
+            <div class="modal-actions">
+                <button id="confirmModalBtn">Confirm</button>
+                <button id="cancelModalBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // DOM Elements
+        const chatFileInput = document.getElementById('chatFile');
+        const uploadSection = document.getElementById('upload-section'); 
+        const dropText = document.getElementById('drop-text'); 
+        const chatDisplayArea = document.getElementById('chat-display-area');
+        const errorMessageDiv = document.getElementById('errorMessage');
+        const searchInput = document.getElementById('searchInput');
+        const searchStartDateInput = document.getElementById('searchStartDateInput');
+        const searchEndDateInput = document.getElementById('searchEndDateInput');
+        const userSelector = document.getElementById('userSelector');
+        const themeToggle = document.getElementById('theme-toggle');
+        const body = document.body;
+        const scrollToTopBtn = document.getElementById('scrollToTop');
+        const scrollToBottomBtn = document.getElementById('scrollToBottom');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const exportPdfBtn = document.getElementById('exportPdfBtn');
+        const toggleBookmarksBtn = document.getElementById('toggleBookmarksBtn');
+        const saveChatBtn = document.getElementById('saveChatBtn');
+        const actionFeedback = document.getElementById('action-feedback');
+        const savedChatsList = document.getElementById('saved-chats-list');
+        const noChatsSavedMsg = document.getElementById('no-chats-saved');
+        const confirmationModal = document.getElementById('confirmationModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const confirmModalBtn = document.getElementById('confirmModalBtn');
+        const cancelModalBtn = document.getElementById('cancelModalBtn');
+        let confirmCallback = null;
+
+
+        let currentChatFileName = "Untitled Chat"; 
+        let rawChatText = ""; 
+        let allMessages = [];
+        let uniqueSenders = new Set();
+        let selectedUser = "OBSERVER_MODE"; 
+        let senderColors = {};
+        let bookmarkedMessageIds = new Set();
+        let isViewingBookmarks = false;
+
+        const predefinedSenderColors = [ '#e53935', '#3949ab', '#00897b', '#fb8c00', '#8e24aa', '#43a047', '#546e7a', '#d81b60' ];
+        const mediaRegex = /<((image|video|audio|sticker|GIF) omitted|Contact card omitted|document omitted)>/i;
+        
+        const urlRegex = /(\b(?:https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])|(\bwww\.[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])|(\b[a-zA-Z0-9.-]+\.(?:com|org|net|gov|edu|io|co|info|biz|me|us|uk|ca|au|de|fr|jp|cn|in|br|ru|eu|ai|app|dev|tech|online|site|space|store|studio|xyz)(?:\/[^ \t\n\r<>()\[\]{}",']*)*)/ig;
+        const phoneRegex = /(\+?\d{1,4}?[-.\s()]?\d{1,3}?[-.\s()]?\d{1,4}[-.\s()]?\d{1,4}[-.\s()]?\d{1,9})/g;
+
+
+        const replyQuoteRegex = /^(?:&gt;|>)\s*\[?([^\]:]+)\]?:\s*([\s\S]*?)(?=\n\n|$)/m; 
+        const blockQuoteRegex = /```([\s\S]*?)```/m; 
+
+
+        // --- Event Listeners ---
+        chatFileInput.addEventListener('change', handleFileUploadEvent); 
+        searchInput.addEventListener('input', handleSearch);
+        searchStartDateInput.addEventListener('input', handleSearch); 
+        searchEndDateInput.addEventListener('input', handleSearch);
+        userSelector.addEventListener('change', handleUserSelection);
+        themeToggle.addEventListener('click', toggleTheme);
+        scrollToTopBtn.addEventListener('click', () => chatDisplayArea.scrollTop = 0);
+        scrollToBottomBtn.addEventListener('click', () => chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight);
+        chatDisplayArea.addEventListener('click', handleChatAreaClick);
+        exportPdfBtn.addEventListener('click', exportChatToPDF);
+        toggleBookmarksBtn.addEventListener('click', toggleBookmarkView);
+        saveChatBtn.addEventListener('click', saveCurrentChatToHistory); 
+        savedChatsList.addEventListener('click', handleSavedChatClick); 
+
+        uploadSection.addEventListener('dragover', handleDragOver);
+        uploadSection.addEventListener('dragenter', handleDragEnter);
+        uploadSection.addEventListener('dragleave', handleDragLeave);
+        uploadSection.addEventListener('drop', handleDrop);
+
+        cancelModalBtn.addEventListener('click', hideConfirmationModal);
+        confirmModalBtn.addEventListener('click', () => {
+            if (confirmCallback) confirmCallback();
+            hideConfirmationModal();
+        });
+
+
+        // --- Initial Setup ---
+        loadTheme(); 
+        loadBookmarksFromStorage();
+        renderChatHistorySidebar(); 
+
+
+        // --- Functions ---
+        function showConfirmationModal(title, message, onConfirm) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            confirmCallback = onConfirm;
+            confirmationModal.classList.add('show');
+        }
+
+        function hideConfirmationModal() {
+            confirmationModal.classList.remove('show');
+            confirmCallback = null;
+        }
+
+
+        function showActionFeedback(message, isSuccess = true, duration = 3000) {
+            actionFeedback.textContent = message;
+            actionFeedback.className = isSuccess ? 'feedback-success' : 'feedback-error';
+            actionFeedback.classList.add('show'); 
+            setTimeout(() => { 
+                actionFeedback.classList.remove('show');
+                setTimeout(() => { actionFeedback.style.display = 'none'; }, 300); 
+            }, duration);
+        }
+        
+        function handleFileUploadEvent(event) { 
+            const file = event.target.files[0];
+            if (file) {
+                currentChatFileName = file.name; 
+                processFile(file);
+            }
+        }
+
+        function processFile(file) {
+            if (file && file.type === "text/plain") {
+                loadingIndicator.style.display = 'block';
+                chatDisplayArea.innerHTML = '';
+                errorMessageDiv.classList.add('hidden');
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    rawChatText = e.target.result; 
+                    currentChatFileName = file.name || `Chat loaded at ${new Date().toLocaleTimeString()}`; 
+                    setTimeout(() => { 
+                         parseChat(rawChatText);
+                         loadingIndicator.style.display = 'none';
+                         showActionFeedback("Chat loaded successfully!");
+                    }, 50);
+                };
+                reader.onerror = () => {
+                    showError("Error reading file.");
+                    loadingIndicator.style.display = 'none';
+                }
+                reader.readAsText(file);
+            } else if (file) {
+                 showError("Invalid file type. Please upload or drop a .txt file.");
+            }
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault(); 
+            event.dataTransfer.dropEffect = 'copy';
+        }
+        function handleDragEnter(event) {
+            event.preventDefault();
+            uploadSection.classList.add('dragover');
+            dropText.classList.remove('hidden');
+        }
+        function handleDragLeave(event) {
+            event.preventDefault();
+            uploadSection.classList.remove('dragover');
+            dropText.classList.add('hidden');
+        }
+        function handleDrop(event) {
+            event.preventDefault();
+            uploadSection.classList.remove('dragover');
+            dropText.classList.add('hidden');
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                currentChatFileName = files[0].name; 
+                processFile(files[0]); 
+            }
+        }
+
+
+        function parseChat(chatText) {
+            if (!chatText) {
+                showError("No chat data to parse.");
+                chatDisplayArea.innerHTML = '<p class="text-gray-500 text-center p-10">Upload a chat file or load a saved one.</p>';
+                return;
+            }
+            uniqueSenders = new Set();
+            senderColors = {};
+            allMessages = [];
+            let messageIdCounter = 0; 
+            let currentMessageBuffer = null;
+            const lines = chatText.split(/\r?\n/);
+            const messageRegex = /^(\[?(\d{1,2}\/\d{1,2}\/\d{2,4}),? (\d{1,2}:\d{2}(?::\d{2})?(?: [AP]M)?)\]? ?-? ?)(?:([^:]+): )?(.*)$/s;
+
+
+            lines.forEach(line => {
+                const match = line.match(messageRegex);
+                if (match) {
+                    if (currentMessageBuffer) allMessages.push(currentMessageBuffer);
+                    const sender = match[4] ? match[4].trim() : "System";
+                    let textContent = match[5] ? match[5].trim() : "";
+                    
+                    let replyInfo = null;
+                    const replyMatch = textContent.match(replyQuoteRegex);
+                    const blockQuoteMatch = textContent.match(blockQuoteRegex);
+
+                    if (replyMatch) {
+                        replyInfo = {
+                            sender: replyMatch[1].trim(),
+                            text: replyMatch[2].trim().split('\n')[0] 
+                        };
+                        textContent = textContent.replace(replyQuoteRegex, "").trim();
+                    } else if (blockQuoteMatch) {
+                         replyInfo = {
+                            sender: "Quoted", 
+                            text: blockQuoteMatch[1].trim().split('\n')[0]
+                         };
+                         textContent = textContent.replace(blockQuoteRegex, "").trim();
+                    }
+
+
+                    currentMessageBuffer = {
+                        id: `msg-${messageIdCounter++}`, 
+                        date: match[2], time: match[3], sender: sender,
+                        text: textContent, 
+                        isMedia: mediaRegex.test(textContent || ""), 
+                        replyInfo: replyInfo 
+                    };
+                    if (sender !== "System") uniqueSenders.add(sender);
+                } else if (currentMessageBuffer) {
+                    currentMessageBuffer.text += '\n' + line.trim();
+                    currentMessageBuffer.isMedia = currentMessageBuffer.isMedia || mediaRegex.test(line);
+                } else if (line.trim() !== "") {
+                    allMessages.push({ 
+                        id: `msg-${messageIdCounter++}`, 
+                        date: "", time: "", sender: "System", text: line.trim(), isMedia: false, replyInfo: null
+                    });
+                }
+            });
+            if (currentMessageBuffer) allMessages.push(currentMessageBuffer);
+
+            populateUserSelector(); 
+            assignSenderColors();
+            displayChat();
+        }
+
+        function populateUserSelector() {
+            const currentVal = userSelector.value; 
+            userSelector.innerHTML = '<option value="OBSERVER_MODE">View as Observer</option>';
+            let firstSender = null;
+            Array.from(uniqueSenders).forEach((sender, index) => {
+                if(index === 0) firstSender = sender;
+                const option = document.createElement('option');
+                option.value = sender;
+                option.textContent = sender;
+                userSelector.appendChild(option);
+            });
+            
+            if (currentVal && Array.from(uniqueSenders).includes(currentVal)) {
+                userSelector.value = currentVal;
+                selectedUser = currentVal;
+            } else if (firstSender) {
+                 userSelector.value = firstSender; 
+                 selectedUser = firstSender;
+            } else {
+                userSelector.value = "OBSERVER_MODE"; 
+                selectedUser = "OBSERVER_MODE";
+            }
+        }
+
+        function assignSenderColors() {
+             Array.from(uniqueSenders).forEach((s, index) => {
+                senderColors[s] = predefinedSenderColors[index % predefinedSenderColors.length];
+            });
+        }
+        
+        function parseMessageDateToYYYYMMDD(dateString) {
+            if (!dateString) return null;
+            let dateObj;
+            const parts = dateString.split('/');
+            if (parts.length === 3) {
+                let day, month, year;
+                const part0 = parseInt(parts[0], 10);
+                const part1 = parseInt(parts[1], 10);
+                const part2 = parseInt(parts[2], 10);
+
+                if (part0 >= 1 && part0 <= 12) { // MM/DD/YY or MM/DD/YYYY
+                    month = part0; day = part1; year = part2;
+                    if (year < 100) year += 2000;
+                    dateObj = new Date(year, month - 1, day);
+                    if (dateObj && dateObj.getFullYear() === year && dateObj.getMonth() === month - 1 && dateObj.getDate() === day) {
+                        // Valid
+                    } else { dateObj = undefined; }
+                }
+                if ((!dateObj || isNaN(dateObj.getTime())) && (part1 >= 1 && part1 <= 12)) { // DD/MM/YY or DD/MM/YYYY
+                    month = part1; day = part0; year = part2;
+                    if (year < 100) year += 2000;
+                    dateObj = new Date(year, month - 1, day);
+                     if (!dateObj || isNaN(dateObj.getTime()) || dateObj.getMonth() !== month -1 || dateObj.getDate() !== day ) {
+                        dateObj = undefined; 
+                    }
+                }
+            }
+            if (dateObj && !isNaN(dateObj.getTime())) {
+                return dateObj.getFullYear() + '-' + String(dateObj.getMonth() + 1).padStart(2, '0') + '-' + String(dateObj.getDate()).padStart(2, '0');
+            }
+            return null; 
+        }
+
+
+        function displayChat() {
+            chatDisplayArea.innerHTML = '';
+            if (allMessages.length === 0 && !isViewingBookmarks) { 
+                chatDisplayArea.innerHTML = '<p class="text-gray-500 text-center p-10">No messages to display. Upload a file or load saved chat.</p>';
+                return;
+            }
+
+            const searchTerm = searchInput.value.toLowerCase();
+            const searchStartDateValue = searchStartDateInput.value; 
+            const searchEndDateValue = searchEndDateInput.value; 
+
+            let filteredMessages = allMessages.filter(msg => {
+                let matchesText = true;
+                let matchesDate = true;
+
+                if (searchTerm) {
+                    matchesText = (msg.text.toLowerCase().includes(searchTerm) || 
+                                   (msg.sender !== "System" && msg.sender.toLowerCase().includes(searchTerm)));
+                }
+
+                if (searchStartDateValue || searchEndDateValue) {
+                    const messageDateYYYYMMDD = parseMessageDateToYYYYMMDD(msg.date);
+                    if (!messageDateYYYYMMDD) { 
+                        matchesDate = false;
+                    } else {
+                        if (searchStartDateValue && messageDateYYYYMMDD < searchStartDateValue) {
+                            matchesDate = false;
+                        }
+                        if (searchEndDateValue && messageDateYYYYMMDD > searchEndDateValue) {
+                            matchesDate = false;
+                        }
+                    }
+                }
+                return matchesText && matchesDate;
+            });
+
+            if (isViewingBookmarks) {
+                filteredMessages = filteredMessages.filter(msg => bookmarkedMessageIds.has(msg.id));
+                if (filteredMessages.length === 0) {
+                     chatDisplayArea.innerHTML = '<p class="text-gray-500 text-center p-10">No bookmarked messages match the current filters (if any), or no messages are bookmarked.</p>';
+                     return;
+                }
+            }
+            
+            if (filteredMessages.length === 0) {
+                chatDisplayArea.innerHTML = '<p class="text-gray-500 text-center p-10">No messages match your search criteria.</p>';
+                return;
+            }
+
+
+            let lastDate = null;
+            filteredMessages.forEach(msg => {
+                if (msg.date && msg.date !== lastDate) {
+                    let showDateSeparator = true;
+                    if (searchStartDateValue || searchEndDateValue) {
+                        const separatorDateYYYYMMDD = parseMessageDateToYYYYMMDD(msg.date);
+                        if (!separatorDateYYYYMMDD) {
+                            showDateSeparator = false;
+                        } else {
+                            if (searchStartDateValue && separatorDateYYYYMMDD < searchStartDateValue) showDateSeparator = false;
+                            if (searchEndDateValue && separatorDateYYYYMMDD > searchEndDateValue) showDateSeparator = false;
+                        }
+                    }
+                    if (showDateSeparator) {
+                        chatDisplayArea.appendChild(createDateSeparator(msg.date));
+                        lastDate = msg.date;
+                    }
+                }
+                chatDisplayArea.appendChild(createMessageElement(msg, searchTerm));
+            });
+            
+            if (!searchTerm && !searchStartDateValue && !searchEndDateValue && !isViewingBookmarks) {
+                chatDisplayArea.scrollTop = chatDisplayArea.scrollHeight;
+            } else if (isViewingBookmarks && filteredMessages.length > 0) {
+                 chatDisplayArea.scrollTop = 0; 
+            }
+        }
+
+        function createDateSeparator(dateString) {
+            const separator = document.createElement('div');
+            separator.className = 'date-separator';
+            let dateObj;
+
+            const parts = dateString.split('/'); 
+            if (parts.length === 3) {
+                let day, month, year;
+                
+                const part0 = parseInt(parts[0], 10);
+                const part1 = parseInt(parts[1], 10);
+                const part2 = parseInt(parts[2], 10);
+
+                if (part0 >= 1 && part0 <= 12) { 
+                    month = part0;
+                    day = part1;
+                    year = part2;
+                    if (year < 100) year += 2000; 
+                    dateObj = new Date(year, month - 1, day);
+                    if (!dateObj || isNaN(dateObj.getTime()) || dateObj.getMonth() !== month -1 || dateObj.getDate() !== day) {
+                        dateObj = undefined; 
+                    }
+                }
+
+                if ((!dateObj || isNaN(dateObj.getTime())) && (part1 >=1 && part1 <=12) ) {
+                     month = part1;
+                     day = part0;
+                     year = part2;
+                     if (year < 100) year += 2000; 
+                     dateObj = new Date(year, month - 1, day);
+                     if (!dateObj || isNaN(dateObj.getTime()) || dateObj.getMonth() !== month -1 || dateObj.getDate() !== day ) {
+                        dateObj = undefined; 
+                    }
+                }
+            }
+
+            if (dateObj && !isNaN(dateObj.getTime())) {
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                separator.textContent = dateObj.toLocaleDateString(undefined, options).toUpperCase();
+            } else {
+                separator.textContent = dateString.toUpperCase(); 
+                console.warn("Could not parse date for separator:", dateString, "using fallback.");
+            }
+            return separator;
+        }
+
+        function applyWhatsAppFormatting(text) {
+            if (!text) return "";
+            // Monospace (```text```) - process first to avoid conflict with single backticks if any
+            text = text.replace(/```([\s\S]*?)```/g, '<code>$1</code>');
+            // Bold (*text*)
+            text = text.replace(/(?<!\*)\*([^\*\n][\s\S]*?[^\*\n])\*(?!\*)/g, '<strong>$1</strong>');
+            // Italics (_text_)
+            text = text.replace(/(?<!_)_([^\_\n][\s\S]*?[^\_\n])_(?!_)/g, '<em>$1</em>');
+            // Strikethrough (~text~)
+            text = text.replace(/(?<!\S)~(\S[^~\n]*\S)~(?![\w~])/g, '<del>$1</del>'); // More precise strikethrough
+            
+            return text;
+        }
+
+
+        function createMessageElement(msg, searchTerm) {
+            const isUser = msg.sender === selectedUser && selectedUser !== "OBSERVER_MODE";
+            const isSystem = msg.sender === "System" || isSystemLikeMessage(msg.text);
+            
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('message-wrapper');
+            wrapper.setAttribute('data-message-id', msg.id);
+
+
+            if (isSystem) {
+                wrapper.className = 'system-message'; 
+                wrapper.innerHTML = highlightText(applyWhatsAppFormatting(msg.text), searchTerm);
+                return wrapper;
+            }
+
+            wrapper.classList.add(isUser ? 'user-message-wrapper' : 'other-message-wrapper');
+            
+
+            const bubble = document.createElement('div');
+            bubble.classList.add('message-bubble');
+
+            const getThemeColor = (cssVarName, fallbackColor) => {
+                if (typeof document !== 'undefined' && document.documentElement) {
+                    const color = getComputedStyle(document.documentElement).getPropertyValue(cssVarName).trim();
+                    return color || fallbackColor;
+                }
+                return fallbackColor; 
+            };
+
+            if (!isUser && msg.sender !== "System") { 
+                 const header = document.createElement('div');
+                 header.className = 'message-header';
+                 const senderNameDiv = document.createElement('div');
+                 senderNameDiv.className = 'sender-name';
+                 senderNameDiv.textContent = msg.sender;
+                 senderNameDiv.style.color = senderColors[msg.sender] || getThemeColor('--text-secondary', '#667781');
+                 header.appendChild(senderNameDiv);
+                 bubble.appendChild(header);
+            }
+            
+            if (msg.replyInfo) {
+                const replyQuoteDiv = document.createElement('div');
+                replyQuoteDiv.className = 'reply-quote';
+                
+                const replySenderName = document.createElement('span');
+                replySenderName.className = 'sender-name';
+                replySenderName.textContent = msg.replyInfo.sender;
+                replySenderName.style.color = senderColors[msg.replyInfo.sender] || getThemeColor('--text-secondary', '#667781'); 
+                replyQuoteDiv.appendChild(replySenderName);
+
+                const replyTextSnippet = document.createElement('span');
+                replyTextSnippet.className = 'reply-text-snippet';
+                replyTextSnippet.innerHTML = applyWhatsAppFormatting(msg.replyInfo.text); // Apply formatting to snippet
+                replyQuoteDiv.appendChild(replyTextSnippet);
+                
+                bubble.appendChild(replyQuoteDiv);
+            }
+
+
+            const bodyDiv = document.createElement('div');
+            bodyDiv.className = 'message-body';
+            
+            if (msg.isMedia) {
+                bodyDiv.appendChild(createMediaPlaceholder(msg.text));
+            } else {
+                const textP = document.createElement('p');
+                textP.className = 'message-text';
+                // Apply formatting, then linkify, then highlight
+                let processedText = applyWhatsAppFormatting(msg.text);
+                processedText = linkifyTextAndPhone(processedText); // Combined link and phone
+                textP.innerHTML = highlightText(processedText, searchTerm);
+                bodyDiv.appendChild(textP);
+            }
+
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'message-time';
+            timeSpan.textContent = msg.time.replace(/ [AP]M$/, '').trim();
+            bodyDiv.appendChild(timeSpan);
+            
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'message-actions';
+
+            const copyIcon = document.createElement('i');
+            copyIcon.className = 'fas fa-copy copy-icon';
+            copyIcon.title = 'Copy text';
+            actionsDiv.appendChild(copyIcon);
+
+            const bookmarkIcon = document.createElement('i');
+            bookmarkIcon.className = `far fa-bookmark bookmark-icon ${bookmarkedMessageIds.has(msg.id) ? 'fas bookmarked' : 'far'}`;
+            bookmarkIcon.title = bookmarkedMessageIds.has(msg.id) ? 'Remove Bookmark' : 'Add Bookmark';
+            actionsDiv.appendChild(bookmarkIcon);
+            
+            bubble.appendChild(actionsDiv); 
+
+            bubble.appendChild(bodyDiv);
+            wrapper.appendChild(bubble);
+
+            return wrapper;
+        }
+        
+        function createMediaPlaceholder(text) { 
+            const placeholder = document.createElement('div');
+            placeholder.className = 'media-placeholder';
+            let iconClass = 'fa-file'; 
+            if (text.includes('image')) iconClass = 'fa-image';
+            else if (text.includes('video')) iconClass = 'fa-video';
+            else if (text.includes('audio')) iconClass = 'fa-headphones';
+            else if (text.includes('sticker')) iconClass = 'fa-sticky-note';
+            else if (text.includes('Contact')) iconClass = 'fa-address-card';
+            placeholder.innerHTML = `<i class="fas ${iconClass}"></i> ${text}`;
+            return placeholder;
+        }
+        
+        function linkifyTextAndPhone(text) {
+            if (!text) return "";
+            // Linkify URLs first
+            text = text.replace(urlRegex, (match, p1, p2, p3) => {
+                let url = match;
+                if (p2 && !p2.startsWith('http')) { // For www.example.com
+                    url = 'http://' + url;
+                } else if (p3 && !p3.match(/^(https?|ftp|file):\/\//i)) { // For example.com
+                     url = 'http://' + url;
+                }
+                return `<a href="${url}" target="_blank" rel="noopener noreferrer">${match}</a>`;
+            });
+            // Linkify Phone Numbers
+            text = text.replace(phoneRegex, (match) => {
+                // Remove common non-digit characters for the tel: link, but keep them for display
+                const telLink = match.replace(/[-.\s()]/g, '');
+                return `<a href="tel:${telLink}">${match}</a>`;
+            });
+            return text;
+        }
+
+        function highlightText(text, term) { 
+            if (!term) return text;
+            // Escape special characters in the search term for regex
+            const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            // Create a regex to find the term, ensuring it's not inside an HTML tag
+            const regex = new RegExp(`(?<!<[^>]*)${escapedTerm}(?![^<]*>)`, 'gi');
+            return text.replace(regex, `<mark>$&</mark>`);
+        }
+        
+        function handleSearch(event) { 
+            isViewingBookmarks = false; 
+            updateToggleBookmarksButton();
+            displayChat(); 
+        }
+
+        function handleUserSelection(event) {
+            selectedUser = event.target.value;
+            displayChat(); 
+        }
+
+        function toggleTheme() {
+            body.classList.toggle('dark-theme');
+            const isDark = body.classList.contains('dark-theme');
+            themeToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        function loadTheme() {
+            if (localStorage.getItem('theme') === 'dark') {
+                body.classList.add('dark-theme');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            } else {
+                 themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+            }
+        }
+        
+        function handleChatAreaClick(event) {
+            const target = event.target;
+            const messageWrapper = target.closest('.message-wrapper');
+            if (!messageWrapper) return;
+
+            const messageId = messageWrapper.getAttribute('data-message-id');
+
+            if (target.classList.contains('copy-icon')) {
+                const bubble = target.closest('.message-bubble');
+                const textElement = bubble.querySelector('.message-text');
+                if (textElement) {
+                    navigator.clipboard.writeText(textElement.textContent) // Copy plain text
+                        .then(() => { 
+                            target.classList.remove('fa-copy');
+                            target.classList.add('fa-check');
+                            setTimeout(() => {
+                                 target.classList.remove('fa-check');
+                                 target.classList.add('fa-copy');
+                            }, 1500);
+                         })
+                        .catch(err => {
+                            console.error('Failed to copy text: ', err);
+                            showActionFeedback('Failed to copy text.', false);
+                        });
+                }
+            } else if (target.classList.contains('bookmark-icon')) {
+                toggleBookmark(messageId, target);
+            }
+        }
+
+        function toggleBookmark(messageId, iconElement) {
+            if (bookmarkedMessageIds.has(messageId)) {
+                bookmarkedMessageIds.delete(messageId);
+                iconElement.classList.remove('fas', 'bookmarked');
+                iconElement.classList.add('far');
+                iconElement.title = 'Add Bookmark';
+                showActionFeedback("Bookmark removed.", true);
+            } else {
+                bookmarkedMessageIds.add(messageId);
+                iconElement.classList.remove('far');
+                iconElement.classList.add('fas', 'bookmarked');
+                iconElement.title = 'Remove Bookmark';
+                showActionFeedback("Message bookmarked!", true);
+            }
+            saveBookmarksToStorage();
+            if(isViewingBookmarks) displayChat(); 
+        }
+
+        function saveBookmarksToStorage() {
+            localStorage.setItem('whatsappChatBookmarks', JSON.stringify(Array.from(bookmarkedMessageIds)));
+        }
+
+        function loadBookmarksFromStorage() {
+            const storedBookmarks = localStorage.getItem('whatsappChatBookmarks');
+            if (storedBookmarks) {
+                bookmarkedMessageIds = new Set(JSON.parse(storedBookmarks));
+            }
+        }
+        
+        function toggleBookmarkView() {
+            isViewingBookmarks = !isViewingBookmarks;
+            updateToggleBookmarksButton();
+            displayChat();
+        }
+
+        function updateToggleBookmarksButton() {
+             if (isViewingBookmarks) {
+                toggleBookmarksBtn.innerHTML = '<i class="fas fa-comments"></i> Show All Chats';
+                toggleBookmarksBtn.title = "Show All Chats";
+            } else {
+                toggleBookmarksBtn.innerHTML = '<i class="fas fa-bookmark"></i> View Bookmarks';
+                toggleBookmarksBtn.title = "View Bookmarks";
+            }
+        }
+
+
+        function exportChatToPDF() {
+            if (allMessages.length === 0) {
+                showActionFeedback("No chat loaded to export.", false);
+                return Promise.reject("No chat"); 
+            }
+            showActionFeedback("Generating PDF...", true);
+            const element = chatDisplayArea;
+            
+            const originalHeight = element.style.height;
+            const originalOverflowY = element.style.overflowY;
+
+            element.style.height = 'auto';
+            element.style.overflowY = 'visible';
+            element.classList.add('pdf-export-mode');
+
+            const opt = {
+              margin:       0.5,
+              filename:     currentChatFileName.replace(/\.txt$/i, '') + '_export.pdf', // Use current chat name for PDF
+              image:        { type: 'jpeg', quality: 0.98 },
+              html2canvas:  { 
+                scale: 2, 
+                useCORS: true, 
+                logging: false,
+                backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--chat-bg').trim() || '#e5ddd5', 
+                onclone: (doc) => {
+                    const chatAreaClone = doc.getElementById('chat-display-area');
+                    if(chatAreaClone) {
+                        chatAreaClone.style.height = 'auto';
+                        chatAreaClone.style.overflowY = 'visible';
+                        chatAreaClone.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--chat-bg').trim() || '#e5ddd5';
+                    }
+                    doc.querySelectorAll('.pdf-export-mode .message-bubble::before').forEach(el => el.style.display = 'none');
+                    doc.querySelectorAll('.pdf-export-mode .message-actions').forEach(el => el.style.display = 'none');
+                }
+              },
+              jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            
+            return new Promise((resolve, reject) => {
+                requestAnimationFrame(() => { 
+                    requestAnimationFrame(() => { 
+                        html2pdf().from(element).set(opt).save()
+                        .then(() => {
+                            showActionFeedback("PDF exported successfully!", true);
+                            resolve();
+                        })
+                        .catch(err => {
+                            showActionFeedback("PDF export failed. See console for details.", false);
+                            console.error("PDF Export Error:", err);
+                            reject(err); 
+                        })
+                        .finally(() => {
+                            element.style.height = originalHeight;
+                            element.style.overflowY = originalOverflowY;
+                            element.classList.remove('pdf-export-mode');
+                        });
+                    });
+                });
+            });
+        }
+        
+        function getSavedChats() {
+            const chats = localStorage.getItem('whatsappChatHistory');
+            return chats ? JSON.parse(chats) : [];
+        }
+
+        function saveCurrentChatToHistory() {
+            if (!rawChatText && allMessages.length === 0) {
+                showActionFeedback("No chat data to save.", false);
+                return;
+            }
+            const chats = getSavedChats();
+            const chatIdentifier = currentChatFileName || `Chat saved at ${new Date().toLocaleString()}`;
+            
+            let actualLastMsgDate = new Date().toLocaleDateString(); // Fallback
+            if (allMessages.length > 0) {
+                for (let i = allMessages.length - 1; i >= 0; i--) {
+                    if (allMessages[i].date) {
+                        actualLastMsgDate = allMessages[i].date;
+                        break;
+                    }
+                }
+            }
+
+
+            const existingChatIndex = chats.findIndex(chat => chat.name === chatIdentifier);
+
+            const chatData = {
+                name: chatIdentifier,
+                rawChatText: rawChatText, 
+                selectedUser: selectedUser, 
+                timestamp: new Date().toISOString(), // Save/update timestamp
+                actualLastMessageDate: actualLastMsgDate // Store the actual last message date
+            };
+
+            if (existingChatIndex > -1) {
+                chats[existingChatIndex] = chatData; 
+            } else {
+                chats.push(chatData); 
+            }
+            
+            localStorage.setItem('whatsappChatHistory', JSON.stringify(chats));
+            renderChatHistorySidebar();
+            showActionFeedback("Chat saved to history!", true);
+        }
+
+        function renderChatHistorySidebar() {
+            const chats = getSavedChats();
+            savedChatsList.innerHTML = ''; 
+
+            if (chats.length === 0) {
+                noChatsSavedMsg.style.display = 'block';
+            } else {
+                noChatsSavedMsg.style.display = 'none';
+                chats.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); 
+                
+                chats.forEach((chat, index) => {
+                    const li = document.createElement('li');
+                    li.setAttribute('data-chat-index', index); 
+
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'chat-history-name';
+                    nameSpan.textContent = chat.name;
+                    li.appendChild(nameSpan);
+
+                    const dateSpan = document.createElement('span');
+                    dateSpan.className = 'chat-history-date';
+                    // Display the actualLastMessageDate if available, otherwise fallback to timestamp
+                    let displayDateInSidebar = chat.actualLastMessageDate || new Date(chat.timestamp).toLocaleDateString();
+                    // Try to format it nicely if it's a raw date string
+                    if (chat.actualLastMessageDate) {
+                        const parsedDateForSidebar = parseRawDateString(chat.actualLastMessageDate);
+                        if (parsedDateForSidebar) {
+                            displayDateInSidebar = parsedDateForSidebar.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' });
+                        } else {
+                            displayDateInSidebar = chat.actualLastMessageDate; // fallback to raw if parsing failed
+                        }
+                    }
+                    dateSpan.textContent = displayDateInSidebar; 
+                    li.appendChild(dateSpan);
+                    
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'chat-history-actions';
+
+                    const renameBtn = document.createElement('i');
+                    renameBtn.className = 'fas fa-pen chat-history-rename';
+                    renameBtn.title = 'Rename this chat';
+                    renameBtn.onclick = (e) => {
+                        e.stopPropagation(); 
+                        promptRenameChat(index, chat.name);
+                    };
+                    actionsDiv.appendChild(renameBtn);
+
+                    const deleteBtn = document.createElement('i');
+                    deleteBtn.className = 'fas fa-times chat-history-delete';
+                    deleteBtn.title = 'Delete this chat from history';
+                    deleteBtn.onclick = (e) => {
+                        e.stopPropagation(); 
+                        confirmDeleteChatFromHistory(index, chat.name);
+                    };
+                    actionsDiv.appendChild(deleteBtn);
+                    li.appendChild(actionsDiv);
+
+
+                    if (rawChatText === chat.rawChatText && currentChatFileName === chat.name) { 
+                        li.classList.add('active-chat-history');
+                    }
+
+                    savedChatsList.appendChild(li);
+                });
+            }
+        }
+        
+        // Helper to parse raw date strings like "MM/DD/YY" into a Date object
+        function parseRawDateString(dateString) {
+            if (!dateString) return null;
+            let dateObj;
+            const parts = dateString.split('/');
+            if (parts.length === 3) {
+                let day, month, year;
+                const part0 = parseInt(parts[0], 10);
+                const part1 = parseInt(parts[1], 10);
+                const part2 = parseInt(parts[2], 10);
+
+                if (part0 >= 1 && part0 <= 12) { // MM/DD/YY or MM/DD/YYYY
+                    month = part0; day = part1; year = part2;
+                    if (year < 100) year += 2000;
+                    dateObj = new Date(year, month - 1, day);
+                    if (!dateObj || isNaN(dateObj.getTime()) || dateObj.getMonth() !== month - 1 || dateObj.getDate() !== day) {
+                        dateObj = undefined;
+                    }
+                }
+                if ((!dateObj || isNaN(dateObj.getTime())) && (part1 >= 1 && part1 <= 12)) { // DD/MM/YY or DD/MM/YYYY
+                    month = part1; day = part0; year = part2;
+                    if (year < 100) year += 2000;
+                    dateObj = new Date(year, month - 1, day);
+                    if (!dateObj || isNaN(dateObj.getTime()) || dateObj.getMonth() !== month - 1 || dateObj.getDate() !== day) {
+                        dateObj = undefined;
+                    }
+                }
+            }
+            return dateObj && !isNaN(dateObj.getTime()) ? dateObj : null;
+        }
+
+
+        function promptRenameChat(indexToRename, currentName) {
+            const newName = prompt(`Enter new name for chat "${currentName}":`, currentName);
+            if (newName && newName.trim() !== "" && newName !== currentName) {
+                renameChatInHistory(indexToRename, newName.trim());
+            } else if (newName === "") {
+                showActionFeedback("Chat name cannot be empty.", false);
+            }
+        }
+
+        function renameChatInHistory(indexToRename, newName) {
+            let chats = getSavedChats();
+            if (chats[indexToRename]) {
+                if (chats.some((chat, index) => chat.name === newName && index !== indexToRename)) {
+                    showActionFeedback(`A chat named "${newName}" already exists. Please choose a different name.`, false);
+                    return;
+                }
+                chats[indexToRename].name = newName;
+                localStorage.setItem('whatsappChatHistory', JSON.stringify(chats));
+                renderChatHistorySidebar();
+                if (rawChatText === chats[indexToRename].rawChatText) {
+                    currentChatFileName = newName;
+                }
+                showActionFeedback("Chat renamed successfully!", true);
+            }
+        }
+
+        function confirmDeleteChatFromHistory(indexToDelete, chatName) {
+            showConfirmationModal(
+                "Delete Chat?",
+                `Are you sure you want to delete the chat "${chatName}" from history? This action cannot be undone.`,
+                () => {
+                    deleteChatFromHistory(indexToDelete);
+                }
+            );
+        }
+
+
+        function deleteChatFromHistory(indexToDelete) {
+            let chats = getSavedChats();
+            const deletedChat = chats[indexToDelete]; 
+            
+            chats.splice(indexToDelete, 1); 
+            localStorage.setItem('whatsappChatHistory', JSON.stringify(chats));
+            renderChatHistorySidebar(); 
+            showActionFeedback("Chat removed from history.", true);
+            
+            if (deletedChat && rawChatText === deletedChat.rawChatText && currentChatFileName === deletedChat.name) {
+                rawChatText = "";
+                allMessages = [];
+                currentChatFileName = "Untitled Chat";
+                uniqueSenders = new Set();
+                displayChat(); 
+                userSelector.innerHTML = '<option value="OBSERVER_MODE">View as Observer</option>'; 
+            }
+        }
+
+
+        function handleSavedChatClick(event) {
+            const listItem = event.target.closest('li');
+            if (!listItem || !listItem.hasAttribute('data-chat-index')) return;
+            
+            if (event.target.classList.contains('chat-history-delete') || event.target.classList.contains('chat-history-rename')) {
+                return;
+            }
+
+            const chatIndex = parseInt(listItem.getAttribute('data-chat-index'));
+            const chats = getSavedChats();
+            const chatToLoad = chats[chatIndex];
+
+            if (chatToLoad) {
+                loadingIndicator.style.display = 'block';
+                chatDisplayArea.innerHTML = '';
+                rawChatText = chatToLoad.rawChatText;
+                currentChatFileName = chatToLoad.name; 
+                
+                setTimeout(() => {
+                    parseChat(rawChatText);
+                    if (chatToLoad.selectedUser && Array.from(uniqueSenders).includes(chatToLoad.selectedUser)) {
+                        userSelector.value = chatToLoad.selectedUser;
+                        selectedUser = chatToLoad.selectedUser;
+                    } else if (uniqueSenders.size > 0) {
+                        userSelector.value = Array.from(uniqueSenders)[0];
+                        selectedUser = Array.from(uniqueSenders)[0];
+                    } else {
+                        userSelector.value = "OBSERVER_MODE";
+                        selectedUser = "OBSERVER_MODE";
+                    }
+                    displayChat(); 
+                    
+                    document.querySelectorAll('#saved-chats-list li').forEach(li => li.classList.remove('active-chat-history'));
+                    listItem.classList.add('active-chat-history');
+
+                    loadingIndicator.style.display = 'none';
+                    showActionFeedback(`Loaded chat: ${chatToLoad.name}`, true);
+                }, 50);
+            }
+        }
+
+
+        function isSystemLikeMessage(text) {
+            if (!text) return false;
+            const systemKeywords = [
+                "created group", "added", "removed", "left", "changed the subject", 
+                "changed this group's icon", "changed your security code", 
+                "messages and calls are end-to-end encrypted", "You were added",
+                "changed to", "was added", "your security code with"
+            ];
+            const lowerText = text.toLowerCase();
+            return systemKeywords.some(keyword => lowerText.includes(keyword));
+        }
+        function showError(message) { 
+            errorMessageDiv.textContent = message;
+            errorMessageDiv.classList.remove('hidden');
+        }
+
+    </script>
+</body>
+</html>
